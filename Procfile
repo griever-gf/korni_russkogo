@@ -1,1 +1,1 @@
-web: gunicorn korni-russkogo.wsgi --log-file -
+web: python3 korni.py
