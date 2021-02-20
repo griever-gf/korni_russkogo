@@ -6,13 +6,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 import config
 import os
 import json
-#import django_heroku
-
-#django_heroku.settings(locals())
 
 #PORT = int(os.environ.get('PORT', 5000))
 
 #robot = telebot.TeleBot(config.api_key)
+print("HURMA")
 robot = telebot.TeleBot(os.getenv("TG_API_KEY"))
 
 robot.message_handler(commands=['start'])
