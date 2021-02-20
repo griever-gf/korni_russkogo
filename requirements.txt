@@ -4,4 +4,5 @@ pymorphy2-dicts==2.4.393442.3710985
 pymorphy2-dicts-ru==2.4.417127.4579844
 gspread==3.7.0
 python_telegram_bot==13.3
-telegram==0.0.1
+requests==2.25.1
+urllib3==1.26.3
