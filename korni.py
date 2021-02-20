@@ -3,7 +3,7 @@ import telebot
 import pymorphy2
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import config
+#import config
 import os
 import json
 
