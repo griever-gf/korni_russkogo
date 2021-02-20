@@ -2,6 +2,7 @@
 config.py
 Korni russkogo-3d1949b6c88b.json
 requirements_big.txt
+requirements_hy.txt
 
 # Editors
 .vscode/

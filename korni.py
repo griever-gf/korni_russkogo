@@ -1,87 +1,88 @@
 import re
-import telebot
+#import telebot
 import pymorphy2
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 #import config
 import os
 import json
+from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
+import logging
 
 PORT = int(os.environ.get('PORT', 5000))
+morph = pymorphy2.MorphAnalyzer()
 #.listen(process.env.PORT || 5000)
 
 #robot = telebot.TeleBot(config.api_key)
-print("HURMA")
-robot = telebot.TeleBot(os.getenv("TG_API_KEY"))
+#print("HURMA")
+#robot = telebot.TeleBot(os.getenv("TG_API_KEY"))
+#robot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
 
-robot.message_handler(commands=['start'])
-def start_message(message):
-    robot.send_message(message.chat.id, 'Привет, проверка связи')
-
-# define the scope
-scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-
-# add credentials to the account
-#creds = ServiceAccountCredentials.from_json_keyfile_name('Korni russkogo-3d1949b6c88b.json', scope)
-json_creds = os.getenv("GOOGLE_SHEETS_CREDS_JSON")
-creds_dict = json.loads(json_creds)
-creds_dict["private_key"] = creds_dict["private_key"].replace("\\\\n", "\n")
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+#robot.message_handler(commands=['start'])
+#def start_message(message):
+#    robot.send_message(message.chat.id, 'Привет, проверка связи')
+#def main():
 
 
-# authorize the clientsheet
-client = gspread.authorize(creds)
+#if __name__ == '__main__':
+    #main()
 
-# get the instance of the Spreadsheet
-sheet = client.open('Корни языка')
+def process_text(update, context):
+    # define the scope
+    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 
-# get the first sheet of the Spreadsheet
-sheet_instance = sheet.get_worksheet(0)
+    # add credentials to the account
+    #creds = ServiceAccountCredentials.from_json_keyfile_name('Korni russkogo-3d1949b6c88b.json', scope)
+    json_creds = os.getenv("GOOGLE_SHEETS_CREDS_JSON")
+    creds_dict = json.loads(json_creds)
+    creds_dict["private_key"] = creds_dict["private_key"].replace("\\\\n", "\n")
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
-# get all the records of the data
-records_data = sheet_instance.get_all_records() #list of dictionaries
+
+    # authorize the clientsheet
+    client = gspread.authorize(creds)
+
+    # get the instance of the Spreadsheet
+    sheet = client.open('Корни языка')
+
+    # get the first sheet of the Spreadsheet
+    sheet_instance = sheet.get_worksheet(0)
+
+    # get all the records of the data
+    records_data = sheet_instance.get_all_records() #list of dictionaries
 
 
-id_non_native = sheet_instance.cell(col=1,row=1).value #ключ мусорного значения
-id_native = sheet_instance.cell(col=2,row=1).value #ключ родного значения
+    id_non_native = sheet_instance.cell(col=1,row=1).value #ключ мусорного значения
+    id_native = sheet_instance.cell(col=2,row=1).value #ключ родного значения
 
-# opening google sheet data
-for idxx, dict1 in enumerate(records_data):
-    # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
-    dict_words_list = re.split("[^\w]*,[^\w]*", dict1[id_non_native])
-    for non_native_word in dict_words_list:
-        if re.match(".*\(.*\).*", non_native_word):
-            res = re.search("\(.*\)", non_native_word)
-            word1 =  str.replace(non_native_word, res.group(0), "")
-            word2 =  str.replace(non_native_word, res.group(0), res.group(0).strip(')('))
-            #print("Word 1: " + word1 + " Word 2: " + word2)
-            idx = dict_words_list.index(non_native_word)
-            #print(dict_words_list)
-            dict_words_list.remove(non_native_word)
-            dict_words_list.insert(idx, word1)
-            dict_words_list.insert(idx+1, word2)
-            #print(dict_words_list)
-    records_data[idxx][id_non_native] = ', '.join(dict_words_list)
+    # opening google sheet data
+    for idxx, dict1 in enumerate(records_data):
+        # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
+        dict_words_list = re.split("[^\w]*,[^\w]*", dict1[id_non_native])
+        for non_native_word in dict_words_list:
+            if re.match(".*\(.*\).*", non_native_word):
+                res = re.search("\(.*\)", non_native_word)
+                word1 =  str.replace(non_native_word, res.group(0), "")
+                word2 =  str.replace(non_native_word, res.group(0), res.group(0).strip(')('))
+                #print("Word 1: " + word1 + " Word 2: " + word2)
+                idx = dict_words_list.index(non_native_word)
+                #print(dict_words_list)
+                dict_words_list.remove(non_native_word)
+                dict_words_list.insert(idx, word1)
+                dict_words_list.insert(idx+1, word2)
+                #print(dict_words_list)
+        records_data[idxx][id_non_native] = ', '.join(dict_words_list)
 
-# view the data
-#records_data
-#print(records_data)
-
-morph = pymorphy2.MorphAnalyzer()
-
-#Let's analyze all the incoming text
-@robot.message_handler(content_types=['text'])
-def send_text(message):
     output_message = ""
 
-    #let's split it by words using re.sub(pattern, repl, string, count=0, flags=0)
-    #[\w] means any alphanumeric character and is equal to the character set [a-zA-Z0-9_]
-    input_words_list = re.sub("[^\w]", " ", message.text).split()
-    #print(input_words_list)
+    # let's split it by words using re.sub(pattern, repl, string, count=0, flags=0)
+    # [\w] means any alphanumeric character and is equal to the character set [a-zA-Z0-9_]
+    input_words_list = re.sub("[^\w]", " ", update.message.text).split()
+    # print(input_words_list)
 
     for checked_word in input_words_list:
-        #print("Проверяем: " + checked_word)
-        #if (checked_word == "бафф"):
+        # print("Проверяем: " + checked_word)
+        # if (checked_word == "бафф"):
         #    print(morph.parse(checked_word)[0].lexeme)
         #    morph.parse(checked_word)[0].lexeme
 
@@ -89,26 +90,51 @@ def send_text(message):
 
         # opening google sheet data
         for dict2 in records_data:
-            #print(dict[id_non_native])
+            # print(dict[id_non_native])
             # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
             # split by comma only (useful for words with spaces)
             dict_words_list = re.split("[^\w]*,[^\w]*", dict2[id_non_native])
             for non_native_word in dict_words_list:
-                #maybe should try to normalize non_native form too or to check all the forms of non_native_word
+                # maybe should try to normalize non_native form too or to check all the forms of non_native_word
                 if ((checked_word_normal_form == non_native_word) or (checked_word == non_native_word)):
-                    #print("Входное: " + checked_word)
-                    #print("Попробуйте: " + dict2[id_native])
+                    # print("Входное: " + checked_word)
+                    # print("Попробуйте: " + dict2[id_native])
                     output_message += "Не \"" + checked_word_normal_form + "\", а " + dict2[id_native] + ".\n"
-                #else:
-                    #print(checked_word_normal_form + " != " + non_native_word)
-                    #print(checked_word + " != " + non_native_word)
+                # else:
+                # print(checked_word_normal_form + " != " + non_native_word)
+                # print(checked_word + " != " + non_native_word)
     if (output_message != ""):
         output_message += "Берегите корни русского языка..."
-        robot.send_message(message.chat.id, output_message)
+        #robot.send_message(message.chat.id, output_message)
+        update.message.reply_text(output_message)
+
+
+updater = Updater(os.getenv("TG_API_KEY"))
+# Get the dispatcher to register handlers
+dp = updater.dispatcher
+
+dp.add_handler(MessageHandler(Filters.text, process_text))
+
+updater.start_webhook(listen="0.0.0.0",
+                      port=PORT,
+                      url_path=os.getenv("TG_API_KEY"))
+updater.bot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+updater.idle()
+
+# view the data
+#records_data
+#print(records_data)
+
+#morph = pymorphy2.MorphAnalyzer()
+
+#Let's analyze all the incoming text
+#@robot.message_handler(content_types=['text'])
+#def send_text(message):
+
 
 
 
 #robot.polling(none_stop=True)
-robot.start_webhook(listen="0.0.0.0", port=int(PORT), url_path=os.getenv("TG_API_KEY"))
-robot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
-robot.idle()
+#robot.start_webhook(listen="0.0.0.0", port=int(PORT), url_path=os.getenv("TG_API_KEY"))
+#robot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+#robot.idle()
