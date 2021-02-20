@@ -1,10 +1,12 @@
 import re
 import telebot
+import pymorphy2
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import pymorphy2
 import config
+import os
 
+PORT = int(os.environ.get('PORT', 5000))
 
 robot = telebot.TeleBot(config.api_key)
 
@@ -97,4 +99,6 @@ def send_text(message):
 
 
 
-robot.polling()
+robot.polling(none_stop=True)
+#robot.start_webhook(listen="0.0.0.0", port=int(PORT), url_path=config.api_key)
+#robot.setWebhook('https://korni-russkogo.herokuapp.com/' + config.api_key)
