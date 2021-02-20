@@ -3,12 +3,14 @@ import telebot
 import pymorphy2
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import config
+#import config
 import os
+import json
 
 PORT = int(os.environ.get('PORT', 5000))
 
-robot = telebot.TeleBot(config.api_key)
+#robot = telebot.TeleBot(config.api_key)
+robot = telebot.TeleBot(os.getenv("TG_API_KEY"))
 
 robot.message_handler(commands=['start'])
 def start_message(message):
@@ -18,7 +20,12 @@ def start_message(message):
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 
 # add credentials to the account
-creds = ServiceAccountCredentials.from_json_keyfile_name('Korni russkogo-3d1949b6c88b.json', scope)
+#creds = ServiceAccountCredentials.from_json_keyfile_name('Korni russkogo-3d1949b6c88b.json', scope)
+json_creds = os.getenv("GOOGLE_SHEETS_CREDS_JSON")
+creds_dict = json.loads(json_creds)
+creds_dict["private_key"] = creds_dict["private_key"].replace("\\\\n", "\n")
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
 
 # authorize the clientsheet
 client = gspread.authorize(creds)
