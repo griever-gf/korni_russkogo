@@ -7,7 +7,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 import os
 import json
 
-#PORT = int(os.environ.get('PORT', 5000))
+PORT = int(os.environ.get('PORT', 5000))
+#.listen(process.env.PORT || 5000)
 
 #robot = telebot.TeleBot(config.api_key)
 print("HURMA")
@@ -107,6 +108,7 @@ def send_text(message):
 
 
 
-robot.polling(none_stop=True)
-#robot.start_webhook(listen="0.0.0.0", port=int(PORT), url_path=config.api_key)
-#robot.setWebhook('https://korni-russkogo.herokuapp.com/' + config.api_key)
+#robot.polling(none_stop=True)
+robot.start_webhook(listen="0.0.0.0", port=int(PORT), url_path=os.getenv("TG_API_KEY"))
+robot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+robot.idle()
