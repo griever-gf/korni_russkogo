@@ -1,5 +1,4 @@
 import re
-#import telebot
 import pymorphy2
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -11,22 +10,11 @@ import logging
 
 PORT = int(os.environ.get('PORT', 5000))
 morph = pymorphy2.MorphAnalyzer()
-#.listen(process.env.PORT || 5000)
 
-#robot = telebot.TeleBot(config.api_key)
-#print("HURMA")
-#robot = telebot.TeleBot(os.getenv("TG_API_KEY"))
-#robot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+def start_message(update):
+    update.message.text('Привет, проверка связи 2')
 
-#robot.message_handler(commands=['start'])
-#def start_message(message):
-#    robot.send_message(message.chat.id, 'Привет, проверка связи')
-#def main():
-
-
-#if __name__ == '__main__':
-    #main()
-
+#Let's analyze all the incoming text
 def process_text(update, context):
     # define the scope
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -110,9 +98,11 @@ def process_text(update, context):
 
 
 updater = Updater(os.getenv("TG_API_KEY"))
+
 # Get the dispatcher to register handlers
 dp = updater.dispatcher
 
+dp.add_handler(CommandHandler("start", start_message))
 dp.add_handler(MessageHandler(Filters.text, process_text))
 
 updater.start_webhook(listen="0.0.0.0",
@@ -120,21 +110,3 @@ updater.start_webhook(listen="0.0.0.0",
                       url_path=os.getenv("TG_API_KEY"))
 updater.bot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
 updater.idle()
-
-# view the data
-#records_data
-#print(records_data)
-
-#morph = pymorphy2.MorphAnalyzer()
-
-#Let's analyze all the incoming text
-#@robot.message_handler(content_types=['text'])
-#def send_text(message):
-
-
-
-
-#robot.polling(none_stop=True)
-#robot.start_webhook(listen="0.0.0.0", port=int(PORT), url_path=os.getenv("TG_API_KEY"))
-#robot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
-#robot.idle()
