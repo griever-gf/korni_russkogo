@@ -9,13 +9,14 @@ from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 import logging
 
 PORT = int(os.environ.get('PORT', 5000))
-morph = pymorphy2.MorphAnalyzer()
 
 def start_message(update):
     update.message.text('Привет, проверка связи 2')
 
 #Let's analyze all the incoming text
 def process_text(update, context):
+    morph = pymorphy2.MorphAnalyzer()
+
     # define the scope
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 
