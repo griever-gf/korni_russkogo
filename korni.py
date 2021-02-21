@@ -47,7 +47,7 @@ def process_text(update, context):
     # opening google sheet data
     for idxx, dict1 in enumerate(records_data):
         # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
-        dict_words_list = re.split("[^\w-)(]*\,[^\w-)(]*", dict1[id_non_native]) # split by comma + non-word chars and brackets
+        dict_words_list = re.split("[^\w\-\)\(]*\,[^\w\-\)\(]*", dict1[id_non_native]) # split by comma + non-word chars and brackets
         for non_native_word in dict_words_list:
             print(non_native_word)
             if re.match("[\w-]*\([\w-]*\)[\w-]*", non_native_word):
@@ -77,6 +77,7 @@ def process_text(update, context):
 
         checked_word_lower = checked_word.lower()
 
+        string_to_add = ""
         # opening google sheet data
         for dict2 in records_data:
             # print(dict[id_non_native])
@@ -84,7 +85,6 @@ def process_text(update, context):
             # split by comma only (useful for words with spaces)
             dict_words_list = re.split("[^\w-]*,[^\w-]*", dict2[id_non_native]) #split by comma + non-word chars
             is_coincidence_found = False
-            string_to_add = ""
             for non_native_word in dict_words_list:
                 # maybe should try to normalize non_native form too or to check all the forms of non_native_word
                 if (checked_word_lower == non_native_word):
