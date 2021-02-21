@@ -48,7 +48,8 @@ def process_text(update, context):
     for idxx, dict1 in enumerate(records_data):
         # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
         # split by comma + non-word chars and brackets
-        dict_words_list = re.split("[^\w-\)\(]*,[^\w-\)\(]*", dict1[id_non_native])
+        #dict_words_list = re.split("[^\w-\)\(]*,[^\w-\)\(]*", dict1[id_non_native])
+        dict_words_list = re.split("[^\w-]*,[^\w-]*", dict1[id_non_native])
         for non_native_word in dict_words_list:
             print(non_native_word)
             if re.match("[\w-]*\([\w-]*\)[\w-]*", non_native_word):
