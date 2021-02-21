@@ -104,7 +104,7 @@ updater = Updater(os.getenv("TG_API_KEY"))
 dp = updater.dispatcher
 
 dp.add_handler(CommandHandler("start", start_message))
-dp.add_handler(MessageHandler(Filters.text, process_text))
+dp.add_handler(MessageHandler(Filters.text & (~Filters.forwarded), process_text))
 
 updater.start_webhook(listen="0.0.0.0",
                       port=PORT,
