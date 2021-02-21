@@ -49,18 +49,17 @@ def process_text(update, context):
         # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
         dict_words_list = re.split("[^\w\-\)\(]*\,[^\w\-\)\(]*", dict1[id_non_native]) # split by comma + non-word chars and brackets
         for non_native_word in dict_words_list:
-            print(non_native_word)
             if re.match("[\w-]*\([\w-]*\)[\w-]*", non_native_word):
                 res = re.search("\([\w-]*\)", non_native_word)
                 word1 =  str.replace(non_native_word, res.group(0), "")
                 word2 =  str.replace(non_native_word, res.group(0), res.group(0).strip(')('))
-                print("Word 1: " + word1 + " Word 2: " + word2)
+                #print("Word 1: " + word1 + " Word 2: " + word2)
                 idx = dict_words_list.index(non_native_word)
                 #print(dict_words_list)
                 dict_words_list.remove(non_native_word)
                 dict_words_list.insert(idx, word1)
                 dict_words_list.insert(idx+1, word2)
-                print(dict_words_list)
+                #print(dict_words_list)
         records_data[idxx][id_non_native] = ', '.join(dict_words_list)
 
     output_message = ""
