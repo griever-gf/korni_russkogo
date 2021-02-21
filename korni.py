@@ -53,13 +53,13 @@ def process_text(update, context):
                 res = re.search("\(.*\)", non_native_word)
                 word1 =  str.replace(non_native_word, res.group(0), "")
                 word2 =  str.replace(non_native_word, res.group(0), res.group(0).strip(')('))
-                #print("Word 1: " + word1 + " Word 2: " + word2)
+                print("Word 1: " + word1 + " Word 2: " + word2)
                 idx = dict_words_list.index(non_native_word)
                 #print(dict_words_list)
                 dict_words_list.remove(non_native_word)
                 dict_words_list.insert(idx, word1)
                 dict_words_list.insert(idx+1, word2)
-                #print(dict_words_list)
+                print(dict_words_list)
         records_data[idxx][id_non_native] = ', '.join(dict_words_list)
 
     output_message = ""
