@@ -103,8 +103,9 @@ def process_text(update, context):
             if (is_coincidence_found):
                 break
         #check for identical incoming words - they don't need to appear several times in response message
-        if ((string_to_add != "") and not (string_to_add in output_message)):
-            output_message += string_to_add
+        if (string_to_add != ""):
+            if (not (string_to_add in output_message)): #optimization
+                output_message += string_to_add
 
     if (output_message != ""):
         output_message += "Берегите корни русского языка..."
