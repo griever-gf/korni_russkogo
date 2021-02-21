@@ -66,7 +66,7 @@ def process_text(update, context):
 
     # let's split it by words using re.sub(pattern, repl, string, count=0, flags=0)
     # [\w] means any alphanumeric character and is equal to the character set [a-zA-Z0-9_]
-    input_words_list = re.sub("[^\w]", " ", update.message.text).split()
+    input_words_list = re.sub("[^\w-]", " ", update.message.text).split()
     # print(input_words_list)
 
     for checked_word in input_words_list:
