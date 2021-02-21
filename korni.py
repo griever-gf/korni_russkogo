@@ -71,11 +71,10 @@ def process_text(update, context):
 
     for checked_word in input_words_list:
         # print("Проверяем: " + checked_word)
-        # if (checked_word == "бафф"):
-        #    print(morph.parse(checked_word)[0].lexeme)
-        #    morph.parse(checked_word)[0].lexeme
+        # print(morph.parse(checked_word)[0].lexeme)
+        # morph.parse(checked_word)[0].lexeme
 
-        checked_word_normal_form = morph.normal_forms(checked_word.lower())[0]
+        checked_word_lower = checked_word.lower()
 
         # opening google sheet data
         for dict2 in records_data:
@@ -84,25 +83,31 @@ def process_text(update, context):
             # split by comma only (useful for words with spaces)
             dict_words_list = re.split("[^\w]*,[^\w]*", dict2[id_non_native])
             is_coincidence_found = False
+            string_to_add = ""
             for non_native_word in dict_words_list:
                 # maybe should try to normalize non_native form too or to check all the forms of non_native_word
-                if ((checked_word == non_native_word)):
+                if (checked_word_lower == non_native_word):
                     # print("Входное: " + checked_word)
                     # print("Попробуйте: " + dict2[id_native])
-                    output_message += "Не \"" + checked_word + "\", а " + dict2[id_native] + ".\n"
+                    string_to_add = "Не \"" + checked_word_lower + "\", а " + dict2[id_native] + ".\n"
                     is_coincidence_found = True
                     break
-                elif (checked_word_normal_form == non_native_word):
-                    output_message += "Не \"" + checked_word_normal_form + "\", а " + dict2[id_native] + ".\n"
-                    is_coincidence_found = True
-                    break
+                else:
+                    for normal_form in morph.normal_forms(checked_word_lower):
+                        if (normal_form == non_native_word):
+                            string_to_add = "Не \"" + normal_form + "\", а " + dict2[id_native] + ".\n"
+                            is_coincidence_found = True
+                            break
+                    if (is_coincidence_found):
+                        break
             if (is_coincidence_found):
                 break
-                # print(checked_word_normal_form + " != " + non_native_word)
-                # print(checked_word + " != " + non_native_word)
+        #check for identical incoming words - they don't need to appear several times in response message
+        if ((string_to_add != "") and not (string_to_add in output_message)):
+            output_message += string_to_add
+
     if (output_message != ""):
         output_message += "Берегите корни русского языка..."
-        #robot.send_message(message.chat.id, output_message)
         update.message.reply_text(output_message)
 
 
