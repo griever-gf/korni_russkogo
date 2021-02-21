@@ -83,13 +83,21 @@ def process_text(update, context):
             # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
             # split by comma only (useful for words with spaces)
             dict_words_list = re.split("[^\w]*,[^\w]*", dict2[id_non_native])
+            is_coincidence_found = False
             for non_native_word in dict_words_list:
                 # maybe should try to normalize non_native form too or to check all the forms of non_native_word
-                if ((checked_word_normal_form == non_native_word) or (checked_word == non_native_word)):
+                if ((checked_word == non_native_word)):
                     # print("Входное: " + checked_word)
                     # print("Попробуйте: " + dict2[id_native])
+                    output_message += "Не \"" + checked_word + "\", а " + dict2[id_native] + ".\n"
+                    is_coincidence_found = True
+                    break
+                elif (checked_word_normal_form == non_native_word):
                     output_message += "Не \"" + checked_word_normal_form + "\", а " + dict2[id_native] + ".\n"
-                # else:
+                    is_coincidence_found = True
+                    break
+            if (is_coincidence_found):
+                break
                 # print(checked_word_normal_form + " != " + non_native_word)
                 # print(checked_word + " != " + non_native_word)
     if (output_message != ""):
