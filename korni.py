@@ -49,6 +49,7 @@ def process_text(update, context):
         # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
         dict_words_list = re.split("[^\w-)(]*,[^\w-)(]*", dict1[id_non_native]) #split by comma + non-word chars and brackets
         for non_native_word in dict_words_list:
+            print(non_native_word)
             if re.match("[\w-]*\([\w-]*\)[\w-]*", non_native_word):
                 res = re.search("\([\w-]*\)", non_native_word)
                 word1 =  str.replace(non_native_word, res.group(0), "")
