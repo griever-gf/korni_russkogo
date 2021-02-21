@@ -104,7 +104,7 @@ def process_text(update, context):
                 break
         #check for identical incoming words - they don't need to appear several times in response message
         if (string_to_add != ""):
-            if (not (string_to_add in output_message)): #optimization
+            #if (not (string_to_add in output_message)): #optimization
                 output_message += string_to_add
 
     if (output_message != ""):
