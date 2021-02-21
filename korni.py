@@ -47,10 +47,10 @@ def process_text(update, context):
     # opening google sheet data
     for idxx, dict1 in enumerate(records_data):
         # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
-        dict_words_list = re.split("[^\w-]*,[^\w-]*", dict1[id_non_native])
+        dict_words_list = re.split("[^\w-]*,[^\w-]*", dict1[id_non_native]) #split by comma + non-word chars
         for non_native_word in dict_words_list:
-            if re.match("[^\w-]*\([^\w-]*\)[^\w-]*", non_native_word):
-                res = re.search("\([^\w-]*\)", non_native_word)
+            if re.match("[\w-]*\([\w-]*\)[\w-]*", non_native_word):
+                res = re.search("\([\w-]*\)", non_native_word)
                 word1 =  str.replace(non_native_word, res.group(0), "")
                 word2 =  str.replace(non_native_word, res.group(0), res.group(0).strip(')('))
                 print("Word 1: " + word1 + " Word 2: " + word2)
@@ -81,7 +81,7 @@ def process_text(update, context):
             # print(dict[id_non_native])
             # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
             # split by comma only (useful for words with spaces)
-            dict_words_list = re.split("[^\w-]*,[^\w-]*", dict2[id_non_native])
+            dict_words_list = re.split("[^\w-]*,[^\w-]*", dict2[id_non_native]) #split by comma + non-word chars
             is_coincidence_found = False
             string_to_add = ""
             for non_native_word in dict_words_list:
