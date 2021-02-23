@@ -11,7 +11,7 @@ import logging
 PORT = int(os.environ.get('PORT', 5000))
 
 def start_message(update):
-    update.message.text('Привет, проверка связи 2')
+    update.message.text('Привет, добавь меня в любую болталку, будет круто. Ну или на крайний случай шли письмена в личку')
 
 #Let's analyze all the incoming text
 def process_text(update, context):
@@ -117,8 +117,8 @@ updater = Updater(os.getenv("TG_API_KEY"))
 # Get the dispatcher to register handlers
 dp = updater.dispatcher
 
-dp.add_handler(CommandHandler("start", start_message))
-dp.add_handler(MessageHandler(Filters.text & (~Filters.forwarded), process_text))
+dp.add_handler(CommandHandler('start', start_message))
+dp.add_handler(MessageHandler(Filters.text & ((~Filters.forwarded) | Filters.private), process_text))
 
 updater.start_webhook(listen="0.0.0.0",
                       port=PORT,
