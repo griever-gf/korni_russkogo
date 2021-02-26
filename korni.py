@@ -2,11 +2,15 @@ import re
 import pymorphy2
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import config
 import os
 import json
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 import logging
+try:
+    import config
+except ModuleNotFoundError:
+    # if no config (i.e. prod)
+    pass
 
 PORT = int(os.environ.get('PORT', 5000))
 
