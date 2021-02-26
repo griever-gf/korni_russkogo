@@ -2,7 +2,7 @@ import re
 import pymorphy2
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-#import config
+import config
 import os
 import json
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
@@ -20,14 +20,14 @@ def process_text(update, context):
 
     # define the scope
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-
     # add credentials to the account
-    #creds = ServiceAccountCredentials.from_json_keyfile_name('Korni russkogo-3d1949b6c88b.json', scope)
-    json_creds = os.getenv("GOOGLE_SHEETS_CREDS_JSON")
-    creds_dict = json.loads(json_creds)
-    creds_dict["private_key"] = creds_dict["private_key"].replace("\\\\n", "\n")
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-
+    if ('GOOGLE_SHEETS_CREDS_JSON' in os.environ):  # if prod
+        json_creds = os.getenv("GOOGLE_SHEETS_CREDS_JSON")
+        creds_dict = json.loads(json_creds)
+        creds_dict["private_key"] = creds_dict["private_key"].replace("\\\\n", "\n")
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    else: #if dev
+        creds = ServiceAccountCredentials.from_json_keyfile_name(config.json_keyfile_rodno, scope)
 
     # authorize the clientsheet
     client = gspread.authorize(creds)
@@ -40,7 +40,6 @@ def process_text(update, context):
 
     # get all the records of the data
     records_data = sheet_instance.get_all_records() #list of dictionaries
-
 
     id_non_native = sheet_instance.cell(col=1,row=1).value #ключ мусорного значения
     id_native = sheet_instance.cell(col=2,row=1).value #ключ родного значения
@@ -65,7 +64,9 @@ def process_text(update, context):
 
     output_message = ""
 
-    text_to_split = update.message.text if (update.message.text != "") else update.message.caption
+    text_to_split = update.message.caption if (update.message.text is None) else update.message.text
+    #print("text_to_split: " + text_to_split)
+
     # let's split it by words using re.sub(pattern, repl, string, count=0, flags=0)
     # [\w] means any alphanumeric character and is equal to the character set [a-zA-Z0-9_]
     input_words_list = re.sub("[^\w-]", " ", text_to_split).split()
@@ -114,7 +115,7 @@ def process_text(update, context):
         update.message.reply_text(output_message)
 
 
-updater = Updater(os.getenv("TG_API_KEY"))
+updater = Updater(os.getenv("TG_API_KEY") if ('TG_API_KEY' in os.environ) else config.api_key)
 
 # Get the dispatcher to register handlers
 dp = updater.dispatcher
@@ -122,8 +123,10 @@ dp = updater.dispatcher
 dp.add_handler(CommandHandler('start', start_message))
 dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) | Filters.private), process_text))
 
-updater.start_webhook(listen="0.0.0.0",
-                      port=PORT,
-                      url_path=os.getenv("TG_API_KEY"))
-updater.bot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+if ('TG_API_KEY' in os.environ):  # if prod
+    updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"))
+    updater.bot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+else: #if dev
+    updater.start_polling()
+
 updater.idle()
