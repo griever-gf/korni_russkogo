@@ -13,15 +13,13 @@ except ModuleNotFoundError:
     pass
 
 PORT = int(os.environ.get('PORT', 5000))
+morph = pymorphy2.MorphAnalyzer()
 
 def start_message(update, context):
     #Send a message when the command /start is issued.
     update.message.reply_text('Привет, добавь меня в любую болталку, будет круто. Ну или на крайний случай шли письмена в личку')
 
-#Let's analyze all the incoming text
-def process_text(update, context):
-    morph = pymorphy2.MorphAnalyzer()
-
+def read_glossary_data():
     # define the scope
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     # add credentials to the account
@@ -43,33 +41,50 @@ def process_text(update, context):
     sheet_instance = sheet.get_worksheet(0)
 
     # get all the records of the data
-    records_data = sheet_instance.get_all_records() #list of dictionaries
+    glossary_data = sheet_instance.get_all_records() #list of dictionaries
+    key_incorrect = sheet_instance.cell(col=1,row=1).value #ключ мусорного значения
+    key_correct = sheet_instance.cell(col=2,row=1).value #ключ родного значения
 
-    id_non_native = sheet_instance.cell(col=1,row=1).value #ключ мусорного значения
-    id_native = sheet_instance.cell(col=2,row=1).value #ключ родного значения
+    return glossary_data, key_incorrect,  key_correct
 
-    # opening google sheet data
-    for idxx, dict1 in enumerate(records_data):
+def process_glossary_data (glossary_data, key_incorrect):
+    for idxx, dict1 in enumerate(glossary_data):
         # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
-        dict_words_list = re.split("[^\w\-\)\(]*\,[^\w\-\)\(]*", dict1[id_non_native]) # split by comma + non-word chars and brackets
+        dict_words_list = re.split("[^\w\-\)\(]*\,[^\w\-\)\(]*", dict1[key_incorrect]) # split by comma + non-word chars and brackets
         for non_native_word in dict_words_list:
+            #if contains round brackets, then generate two words instead source word
             if re.match("[\w-]*\([\w-]*\)[\w-]*", non_native_word):
                 res = re.search("\([\w-]*\)", non_native_word)
                 word1 =  str.replace(non_native_word, res.group(0), "")
                 word2 =  str.replace(non_native_word, res.group(0), res.group(0).strip(')('))
-                #print("Word 1: " + word1 + " Word 2: " + word2)
                 idx = dict_words_list.index(non_native_word)
-                #print(dict_words_list)
                 dict_words_list.remove(non_native_word)
                 dict_words_list.insert(idx, word1)
-                dict_words_list.insert(idx+1, word2)
-                #print(dict_words_list)
-        records_data[idxx][id_non_native] = ', '.join(dict_words_list)
+                dict_words_list.insert(idx + 1, word2)
+        i = 0
+        while i < len(dict_words_list):
+            # if contains hyphens, then generate two words instead source word
+            if "-" in dict_words_list[i]:
+                extra_word = dict_words_list[i].replace("-", "")
+                dict_words_list.insert(i + 1, extra_word)
+            i += 1
+        # if contains several russian "е", then generate several words instead source word
+
+        #strout = "dict_words_list: "
+        #for non_native_word in dict_words_list:
+        #    strout += non_native_word + " "
+        #print(strout)
+        glossary_data[idxx][key_incorrect] = ', '.join(dict_words_list)
+    return glossary_data
+
+#Let's analyze all the incoming text
+def process_text(update, context):
+    records_data, id_non_native, id_native = read_glossary_data()
+    records_data = process_glossary_data(records_data, id_non_native)
 
     output_message = ""
 
     text_to_split = update.message.caption if (update.message.text is None) else update.message.text
-    #print("text_to_split: " + text_to_split)
 
     # let's split it by words using re.sub(pattern, repl, string, count=0, flags=0)
     # [\w] means any alphanumeric character and is equal to the character set [a-zA-Z0-9_]
@@ -118,19 +133,23 @@ def process_text(update, context):
         output_message += "Берегите корни русского языка..."
         update.message.reply_text(output_message)
 
+def main():
+    """Start the bot."""
+    updater = Updater(os.getenv("TG_API_KEY") if ('TG_API_KEY' in os.environ) else config.api_key)
 
-updater = Updater(os.getenv("TG_API_KEY") if ('TG_API_KEY' in os.environ) else config.api_key)
+    # Get the dispatcher to register handlers
+    dp = updater.dispatcher
 
-# Get the dispatcher to register handlers
-dp = updater.dispatcher
+    dp.add_handler(CommandHandler('start', start_message))
+    dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) | Filters.private), process_text))
 
-dp.add_handler(CommandHandler('start', start_message))
-dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) | Filters.private), process_text))
+    if ('TG_API_KEY' in os.environ):  # if prod
+        updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"))
+        updater.bot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+    else: #if dev
+        updater.start_polling()
 
-if ('TG_API_KEY' in os.environ):  # if prod
-    updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"))
-    updater.bot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
-else: #if dev
-    updater.start_polling()
+    updater.idle()
 
-updater.idle()
+if __name__ == '__main__':
+    main()
