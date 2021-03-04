@@ -4,6 +4,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
 import json
+import itertools
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 import logging
 try:
@@ -50,30 +51,79 @@ def read_glossary_data():
 def process_glossary_data (glossary_data, key_incorrect):
     for idxx, dict1 in enumerate(glossary_data):
         # split cell if in consist several words using re.sub(pattern, repl, string, count=0, flags=0)
-        dict_words_list = re.split("[^\w\-\)\(]*\,[^\w\-\)\(]*", dict1[key_incorrect]) # split by comma + non-word chars and brackets
-        for non_native_word in dict_words_list:
-            #if contains round brackets, then generate two words instead source word
-            if re.match("[\w-]*\([\w-]*\)[\w-]*", non_native_word):
-                res = re.search("\([\w-]*\)", non_native_word)
-                word1 =  str.replace(non_native_word, res.group(0), "")
-                word2 =  str.replace(non_native_word, res.group(0), res.group(0).strip(')('))
-                idx = dict_words_list.index(non_native_word)
-                dict_words_list.remove(non_native_word)
-                dict_words_list.insert(idx, word1)
-                dict_words_list.insert(idx + 1, word2)
+        dict_words_list = re.split("[^\w\-\)\(]*\,[^\w\-\)\(]*", dict1[key_incorrect]) # split by comma + non-word chars minus brackets
+
+        # if contains several round brackets, then generate several words instead source word
         i = 0
         while i < len(dict_words_list):
-            # if contains hyphens, then generate two words instead source word
+            list_of_inbrackets = re.findall("\([\w-]*\)", dict_words_list[i], re.IGNORECASE)
+            if any(list_of_inbrackets):
+                list_of_parts = re.split("\([\w-]*\)", dict_words_list[i], flags=re.IGNORECASE)
+                list_of_replacement_variants = []
+                for inbracket in list_of_inbrackets:
+                    list_of_replacement_variants.append(("", inbracket.strip(')(')))
+
+                dict_words_list.remove(dict_words_list[i])
+                for trpl in itertools.product(*list_of_replacement_variants):
+                    res_list = [list_of_parts[0]]
+                    for j, content in enumerate(trpl):
+                        res_list.append(content)
+                        res_list.append(list_of_parts[j + 1])
+                    dict_words_list.insert(i, ''.join(res_list))
+                    i += 1
+                i -= 1
+            i += 1
+
+        # if contains hyphens, then generate two words instead source word
+        i = 0
+        while i < len(dict_words_list):
             if "-" in dict_words_list[i]:
                 extra_word = dict_words_list[i].replace("-", "")
                 dict_words_list.insert(i + 1, extra_word)
             i += 1
-        # if contains several russian "е", then generate several words instead source word
+        """
+        # if contains several russian "е/э", then generate several words instead source word
+        i = 0
+        while i < len(dict_words_list):
+            if any(re.findall(r'е|э', dict_words_list[i], re.IGNORECASE)):
+                keyletters = 'еэ'
+                # Convert input string into a list so we can easily substitute letters
+                seq = list(dict_words_list[i])
+                # Find indices of key letters in seq
+                indices = [indx for indx, c in enumerate(seq) if c in keyletters]
 
-        #strout = "dict_words_list: "
-        #for non_native_word in dict_words_list:
-        #    strout += non_native_word + " "
-        #print(strout)
+                dict_words_list.remove(dict_words_list[i])
+                # Generate key letter combinations & place them into the list
+                for t in itertools.product(keyletters, repeat=len(indices)):
+                    for j, c in zip(indices, t):
+                        seq[j] = c
+                    dict_words_list.insert(i, ''.join(seq))
+                    i += 1
+                i -= 1
+            i += 1
+
+        # if contains several russian "ф/фф", then generate several words instead source word
+        i = 0
+        while i < len(dict_words_list):
+            if any(re.findall(r'ф', dict_words_list[i], re.IGNORECASE)):
+                list_of_parts = re.split("ф+", dict_words_list[i], flags=re.IGNORECASE)
+
+                dict_words_list.remove(dict_words_list[i])
+                for trpl in itertools.product(["ф", "фф"], repeat=len(list_of_parts) - 1):
+                    res_list = [list_of_parts[0]]
+                    for j, content in enumerate(trpl):
+                        res_list.append(content)
+                        res_list.append(list_of_parts[j+1])
+                    dict_words_list.insert(i, ''.join(res_list))
+                    i += 1
+                i -= 1
+            i += 1
+        """ """
+        strout = "dict_words_list: "
+        for non_native_word in dict_words_list:
+            strout += non_native_word + " "
+        print(strout)
+        """
         glossary_data[idxx][key_incorrect] = ', '.join(dict_words_list)
     return glossary_data
 
@@ -85,6 +135,7 @@ def process_text(update, context):
     output_message = ""
 
     text_to_split = update.message.caption if (update.message.text is None) else update.message.text
+    #print(text_to_split)
 
     # let's split it by words using re.sub(pattern, repl, string, count=0, flags=0)
     # [\w] means any alphanumeric character and is equal to the character set [a-zA-Z0-9_]
@@ -107,6 +158,7 @@ def process_text(update, context):
             dict_words_list = re.split("[^\w-]*,[^\w-]*", dict2[id_non_native]) #split by comma + non-word chars
             is_coincidence_found = False
             for non_native_word in dict_words_list:
+                non_native_word = non_native_word.lower()
                 # maybe should try to normalize non_native form too or to check all the forms of non_native_word
                 if (checked_word_lower == non_native_word):
                     # print("Входное: " + checked_word)
