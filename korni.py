@@ -147,7 +147,7 @@ def process_text(update, context):
         # print(morph.parse(checked_word)[0].lexeme)
         # morph.parse(checked_word)[0].lexeme
 
-        checked_word_lower = checked_word.lower()
+        checked_word_lower = checked_word.lower().removesuffix("-то").removesuffix("-ка").removesuffix("-таки")
 
         string_to_add = ""
         # opening google sheet data
