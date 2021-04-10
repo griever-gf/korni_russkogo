@@ -52,7 +52,7 @@ def process_text(update, context):
     input_words_list = re.sub("[^\w-]", " ", text_to_split).split()
 
     for checked_word in input_words_list:
-        checked_word_lower = checked_word.lower().removesuffix("-то").removesuffix("-ка").removesuffix("-таки")
+        checked_word_lower = checked_word.lower().removesuffix("-то").removesuffix("-ка").removesuffix("-таки").removeprefix("таки-")
         if checked_word_lower == "":
             continue
 
