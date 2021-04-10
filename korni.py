@@ -15,10 +15,17 @@ PORT = int(os.environ.get('PORT', 5000))
 morph = pymorphy2.MorphAnalyzer()
 
 
-def start_message(update, context):
+def message_how(update, context):
     # Send a message when the command /start is issued.
-    update.message.reply_text('Привет, добавь меня в любую болталку, будет круто.'
-                              ' Ну или на крайняк шли письмена в личку')
+    update.message.reply_text('Способы использования: Наилучший способ - добавить к себе в болталки (беседы), тогда он'
+                            ' будет поправлять всех участников. Для "супергрупп" нужны права заведующего.'
+                            ' Упрощённый способ - просто присылать любые письмена боту в личку, он тоже будет'
+                            ' их поправлять. Но придётся каждый раз вручную это делать.')
+
+def message_info(update, context):
+    # Send a message when the command /start is issued.
+    update.message.reply_text('Дополнительные сведения можно изведать по ссылке: '
+                            'https://telegra.ph/Robot-popravlyalshchik-dlya-Telegrama-Korni-russkogo-04-10')
 
 
 # Let's analyze all the incoming text
@@ -86,7 +93,8 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler('start', start_message))
+    dp.add_handler(CommandHandler('how', message_how))
+    dp.add_handler(CommandHandler('info', message_info))
     dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) | Filters.private), process_text))
 
     if ('TG_API_KEY' in os.environ):  # if prod
