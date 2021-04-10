@@ -17,14 +17,14 @@ morph = pymorphy2.MorphAnalyzer()
 
 def message_how(update, context):
     # Send a message when the command /start is issued.
-    update.message.reply_text('Способы использования: Наилучший способ - добавить к себе в болталки (беседы), тогда он'
-                            ' будет поправлять всех участников. Для "супергрупп" нужны права заведующего.'
-                            ' Упрощённый способ - просто присылать любые письмена боту в личку, он тоже будет'
+    update.message.reply_text('Способы использования:\nНаилучший способ - добавить (ро)бота к себе в болталки (беседы),'
+                            ' тогда он будет поправлять всех участников. Для "супергрупп" нужны права заведующего.'
+                            '\n\nУпрощённый способ - просто присылать любые письмена боту в личку, он тоже будет'
                             ' их поправлять. Но придётся каждый раз вручную это делать.')
 
 def message_info(update, context):
     # Send a message when the command /start is issued.
-    update.message.reply_text('Дополнительные сведения можно изведать по ссылке: '
+    update.message.reply_text('Дополнительные сведения можно изведать по ссылке:\n'
                             'https://telegra.ph/Robot-popravlyalshchik-dlya-Telegrama-Korni-russkogo-04-10')
 
 
