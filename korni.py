@@ -3,6 +3,7 @@ import pymorphy2
 import psycopg2
 import os
 import sys
+import random
 import urllib.parse as urlparse
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 try:
@@ -49,6 +50,8 @@ def process_text(update, context):
     records = cursor.fetchall()
     id_non_native = records[0][0]
     id_native = records[1][0]
+    id_exclusions = records[2][0]
+
 
     output_message = ""
 
@@ -81,8 +84,21 @@ def process_text(update, context):
 
     cursor.close()
     conn.close()
+
     if output_message != "":
-        output_message += "Берегите корни русского языка..."
+        rnd = random.randint(1, 6)
+        if rnd == 1:
+            output_message += "Берегите корни русского языка..."
+        elif rnd == 2:
+            output_message += "Запомни это, дорогой @" + update.message.from_user.username + ". Береги русский язык от вредного мусора."
+        elif rnd == 3:
+            output_message += "Корни русского языка заслуживают такой же охраны и любви, как древнее зодчество, редкие растения и животные."
+        elif rnd == 4:
+            output_message += "Используй НАШИ слова, @" + update.message.from_user.username + " - ведь они КРУТЫЕ, ОСОБЕННЫЕ и РОДНЫЕ."
+        elif rnd == 5:
+            output_message += "Наш особенный язык и уклад - ценное преимущество на мировом поприще и повод для гордости и полноценного самоощущения."
+        elif rnd == 6:
+            output_message += "Мусорные чужие слова разъедают наш язык подобно раку. Береги и преумножай славянские корни языка, " + update.message.from_user.first_name + "."
         update.message.reply_text(output_message)
 
 
@@ -95,7 +111,7 @@ def main():
 
     dp.add_handler(CommandHandler('how', message_how))
     dp.add_handler(CommandHandler('info', message_info))
-    dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) | Filters.private), process_text))
+    dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) | Filters.private), process_text, pass_user_data=True))
 
     if ('TG_API_KEY' in os.environ):  # if prod
         updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"))
