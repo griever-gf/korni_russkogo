@@ -88,7 +88,7 @@ def process_text(update, context):
         output_message += "\n"
         rnd_val = random.randint(1, 6)
         if (update.message.from_user.username == 'Tatsuya_S') and (random.randint(1, 3) == 1):
-            output_message += "Раз ты якобы русский, используй слова с русскими корнями, " + update.message.from_user.first_name + "."
+            output_message += "Раз ты якобы русский, изъясняйся по-русски, " + update.message.from_user.first_name + "."
         elif rnd_val == 1:
             output_message += "Берегите корни русского языка..."
         elif rnd_val == 2:
