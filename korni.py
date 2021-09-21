@@ -52,7 +52,6 @@ def process_text(update, context):
     id_native = records[1][0]
     id_exclusions = records[2][0]
 
-
     output_message = ""
 
     text_to_split = update.message.caption if (update.message.text is None) else update.message.text
@@ -73,7 +72,7 @@ def process_text(update, context):
             string_to_add = "Не \"" + checked_word_lower + "\", а " + fix_recommendation[0] + ".\n"
         else:
             for normal_form in morph.normal_forms(checked_word_lower):
-                cursor.execute("SELECT " + id_native + " FROM rodno_data WHERE " + id_non_native + "='" + normal_form + "'")
+                cursor.execute("SELECT " + id_native + " FROM rodno_data WHERE " + id_non_native + "='" + normal_form + "' AND '" + checked_word_lower + "' NOT IN (SELECT * FROM unnest(\"" + id_exclusions + "\"))")
                 fix_recommendation = cursor.fetchone()
                 if fix_recommendation is not None:
                     string_to_add = "Не \"" + normal_form + "\", а " + fix_recommendation[0] + ".\n"
@@ -86,19 +85,22 @@ def process_text(update, context):
     conn.close()
 
     if output_message != "":
-        rnd = random.randint(1, 6)
-        if rnd == 1:
+        output_message += "\n"
+        rnd_val = random.randint(1, 6)
+        if (update.message.from_user.username == 'Tatsuya_S') and (random.randint(1, 3) == 1):
+            output_message += "Раз ты якобы русский, используй слова с русскими корнями, " + update.message.from_user.first_name + "."
+        elif rnd_val == 1:
             output_message += "Берегите корни русского языка..."
-        elif rnd == 2:
-            output_message += "Запомни это, дорогой @" + update.message.from_user.username + ". Береги русский язык от вредного мусора."
-        elif rnd == 3:
+        elif rnd_val == 2:
+            output_message += "Запомни это, @" + update.message.from_user.username + ". Береги русский язык от вредного мусора."
+        elif rnd_val == 3:
             output_message += "Корни русского языка заслуживают такой же охраны и любви, как древнее зодчество, редкие растения и животные."
-        elif rnd == 4:
+        elif rnd_val == 4:
             output_message += "Используй НАШИ слова, @" + update.message.from_user.username + " - ведь они КРУТЫЕ, ОСОБЕННЫЕ и РОДНЫЕ."
-        elif rnd == 5:
-            output_message += "Наш особенный язык и уклад - ценное преимущество на мировом поприще и повод для гордости и полноценного самоощущения."
-        elif rnd == 6:
-            output_message += "Мусорные чужие слова разъедают наш язык подобно раку. Береги и преумножай славянские корни языка, " + update.message.from_user.first_name + "."
+        elif rnd_val == 5:
+            output_message += "Наш особенный язык и уклад - огромное преимущество на мировом поприще и повод для полноценного самоощущения и гордости."
+        elif rnd_val == 6:
+            output_message += "Чуждые мусорные заимствования разъедают наш язык подобно раку. Береги и преумножай славянские корни языка, " + update.message.from_user.first_name + "."
         update.message.reply_text(output_message)
 
 
