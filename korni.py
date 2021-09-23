@@ -86,21 +86,26 @@ def process_text(update, context):
 
     if output_message != "":
         output_message += "\n"
-        rnd_val = random.randint(1, 6)
-        if (update.message.from_user.username == 'Tatsuya_S') and (random.randint(1, 3) == 1):
+        rnd_val = random.randint(1, 7)
+        rnd_extra = random.randint(1, 5)
+        if (update.message.from_user.username == 'Tatsuya_S') and (rnd_extra == 1):
             output_message += "Раз ты якобы русский, изъясняйся по-русски, " + update.message.from_user.first_name + "."
+        elif (update.message.from_user.username == 'Tatsuya_S') and (rnd_extra == 2):
+            output_message += "Коли считаешь себя русским, чти корни русского, " + update.message.from_user.first_name + "."
         elif rnd_val == 1:
             output_message += "Берегите корни русского языка..."
         elif rnd_val == 2:
             output_message += "Запомни это, @" + update.message.from_user.username + ". Береги русский язык от вредного мусора."
         elif rnd_val == 3:
-            output_message += "Корни русского языка заслуживают такой же охраны и любви, как древнее зодчество, редкие растения и животные."
+            output_message += "Русский язык заслуживает такой же охраны и любви, как древнее зодчество, редкие животные и растения."
         elif rnd_val == 4:
             output_message += "Используй НАШИ слова, @" + update.message.from_user.username + " - ведь они КРУТЫЕ, ОСОБЕННЫЕ и РОДНЫЕ."
         elif rnd_val == 5:
-            output_message += "Наш особенный язык и уклад - огромное преимущество на мировом поприще и повод для полноценного самоощущения и гордости."
+            output_message += "Наш особенный язык и уклад - великое преимущество на мировом поприще и повод для полноценного самоощущения и гордости."
         elif rnd_val == 6:
             output_message += "Чуждые мусорные заимствования разъедают наш язык подобно раку. Береги и преумножай славянские корни языка, " + update.message.from_user.first_name + "."
+        elif rnd_val == 7:
+            output_message += "Ежели изъясняешься по-русски, то используй русские коренные слова, " + update.message.from_user.first_name + "."
         update.message.reply_text(output_message)
 
 
