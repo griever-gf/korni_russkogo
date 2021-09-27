@@ -88,11 +88,11 @@ def process_text(update, context):
         output_message += "\n"
         rnd_val = random.randint(1, 7)
         rnd_extra = random.randint(1, 5)
-        if (update.message.from_user.username == 'Tatsuya_S') and (rnd_extra == 1):
+        if (update.message.from_user.username == 'Tatsuya_S') and (update.message.chat.type != 'private') and (rnd_extra == 1):
             output_message += "Раз ты якобы русский, изъясняйся по-русски, " + update.message.from_user.first_name + "."
-        elif (update.message.from_user.username == 'Tatsuya_S') and (rnd_extra == 2):
+        elif (update.message.from_user.username == 'Tatsuya_S') and (update.message.chat.type != 'private') and (rnd_extra == 2):
             output_message += "Коли считаешь себя русским, чти корни русского, " + update.message.from_user.first_name + "."
-        elif rnd_val == 1:
+        elif (rnd_val == 1) or (update.message.chat.type == 'private'):
             output_message += "Берегите корни русского языка..."
         elif rnd_val == 2:
             output_message += "Запомни это, @" + update.message.from_user.username + ". Береги русский язык от вредного мусора."
