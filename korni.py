@@ -91,13 +91,13 @@ def process_text(update, context):
         rnd_val = random.randint(1, len(lines))
         rnd_extra = random.randint(1, len(lines_ex))
         if (update.message.from_user.username == 'Tatsuya_S') and (update.message.chat.type != 'private'):
-            if '#' in lines_ex[rnd_extra]:
+            if "#" in lines_ex[rnd_extra]:
                 lines_ex[rnd_extra] = lines_ex[rnd_extra].replace("#", update.message.from_user.first_name if random.randint(1, 2) == 1 else "@" + update.message.from_user.username)
             output_message += lines_ex[rnd_extra]
         elif update.message.chat.type == 'private':
             output_message += lines[0]
         else:
-            if '#' in lines[rnd_val]:
+            if "#" in lines[rnd_val]:
                 lines[rnd_val] = lines[rnd_val].replace("#", update.message.from_user.first_name if random.randint(1, 2) == 1 else "@" + update.message.from_user.username)
             output_message += lines[rnd_val]
         update.message.reply_text(output_message)
