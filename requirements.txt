@@ -1,6 +1,6 @@
-psycopg2==2.8.6
+psycopg2==2.9.3
 pymorphy2==0.9.1
 pymorphy2-dicts==2.4.393442.3710985
 pymorphy2-dicts-ru==2.4.417127.4579844
-python_telegram_bot==13.3
-urllib3==1.26.3
+python_telegram_bot==13.10
+urllib3==1.26.8

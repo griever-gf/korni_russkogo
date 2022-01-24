@@ -86,26 +86,23 @@ def process_text(update, context):
 
     if output_message != "":
         output_message += "\n"
-        rnd_val = random.randint(1, 7)
-        rnd_extra = random.randint(1, 5)
-        if (update.message.from_user.username == 'Tatsuya_S') and (update.message.chat.type != 'private') and (rnd_extra == 1):
-            output_message += "Раз ты якобы русский, изъясняйся по-русски, " + update.message.from_user.first_name + "."
-        elif (update.message.from_user.username == 'Tatsuya_S') and (update.message.chat.type != 'private') and (rnd_extra == 2):
-            output_message += "Коли считаешь себя русским, чти корни русского, " + update.message.from_user.first_name + "."
-        elif (rnd_val == 1) or (update.message.chat.type == 'private'):
-            output_message += "Берегите корни русского языка..."
-        elif rnd_val == 2:
-            output_message += "Запомни это, @" + update.message.from_user.username + ". Береги русский язык от вредного мусора."
-        elif rnd_val == 3:
-            output_message += "Русский язык заслуживает такой же охраны и любви, как древнее зодчество, редкие животные и растения."
-        elif rnd_val == 4:
-            output_message += "Используй НАШИ слова, @" + update.message.from_user.username + " - ведь они КРУТЫЕ, ОСОБЕННЫЕ и РОДНЫЕ."
-        elif rnd_val == 5:
-            output_message += "Наш особенный язык и уклад - великое преимущество на мировом поприще и повод для полноценного самоощущения и гордости."
-        elif rnd_val == 6:
-            output_message += "Чуждые мусорные заимствования разъедают наш язык подобно раку. Береги и преумножай славянские корни языка, " + update.message.from_user.first_name + "."
-        elif rnd_val == 7:
-            output_message += "Ежели изъясняешься по-русски, то используй русские коренные слова, " + update.message.from_user.first_name + "."
+        lines = open("data/answers.txt", "r", encoding="utf-8").readlines()
+        lines_ex = open("data/answers_extra.txt", "r", encoding="utf-8").readlines()
+        rnd_val = random.randint(1, len(lines))
+        rnd_extra = random.randint(1, len(lines_ex))
+        if (update.message.from_user.username == 'Tatsuya_S') and (update.message.chat.type != 'private'):
+            if '#' in lines_ex[rnd_extra]:
+                lines_ex[rnd_extra] = lines_ex[rnd_extra].replace("#", update.message.from_user.first_name if random.randint(1, 2) == 1 else "@" + update.message.from_user.username)
+            output_message += lines_ex[rnd_extra]
+        elif update.message.chat.type == 'private':
+            output_message += lines[0]
+        else:
+            if '#' in lines[rnd_val]:
+                lines[rnd_val] = lines[rnd_val].replace("#", update.message.from_user.first_name if random.randint(1, 2) == 1 else "@" + update.message.from_user.username)
+            output_message += lines[rnd_val]
+        update.message.reply_text(output_message)
+    elif update.message.chat.type == 'private':
+        output_message = "Языковая дружина проверила ваши письмена и не нашла ничего зазорного. Ладный русский слог, иностранщина не обнаружена, отпускаем вас."
         update.message.reply_text(output_message)
 
 

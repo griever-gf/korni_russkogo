@@ -1,1 +1,1 @@
-There is just some data for import into PostgreSQL database.
+korni_dictionary - data for import into PostgreSQL database.
