@@ -117,10 +117,10 @@ def main():
     dp.add_handler(CommandHandler('info', message_info))
     dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) | Filters.private), process_text, pass_user_data=True))
 
-    if ('TG_API_KEY' in os.environ):  # if prod
-        updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"))
-        updater.bot.setWebhook('https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
-    else: #if dev
+    if 'TG_API_KEY' in os.environ:  # if prod
+        updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"),
+                              webhook_url='https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+    else:  # if dev
         updater.start_polling()
 
     updater.idle()
