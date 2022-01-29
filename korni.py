@@ -41,12 +41,12 @@ def connect_to_db():
         else:
             connect = psycopg2.connect(dbname=config.db_name, user=config.db_user, password=config.db_password,
                                     host=config.db_host)
+        print("connected to db")
     except psycopg2.OperationalError as e:
         print('Unable to connect!\n{0}').format(e)
         connect = None
-    else:
-        pass
-    return connect
+    finally:
+        return connect
 
 
 def get_db_frequency(cht_id):
@@ -142,6 +142,7 @@ def set_db_frequency(fq, update):
 
     conn.commit()
     cursor.close()
+    conn.close()
 
 
 # Let's analyze all the incoming text
