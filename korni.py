@@ -60,7 +60,7 @@ def get_db_frequency(cht_id):
     cursor.close()
     conn.close()
     if res is not None:
-        print("GET FREQ: " + str(res[0]))
+        #print("GET FREQ: " + str(res[0]))
         return res[0]
     else:
         return res
@@ -108,13 +108,13 @@ def set_db_frequency(fq, update):
     else:
         sys.exit(1)
     # get column names
-    cursor.execute("SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'freq_data'")
-    records = cursor.fetchall()
-    id_chat_id = records[0][0]
-    id_chat_caption = records[2][0]
-    id_chat_username = records[3][0]
-    id_freq = records[1][0]
-    print(records)
+    #cursor.execute("SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'freq_data'")
+    #records = cursor.fetchall()
+    id_chat_id = "chat_id" #records[0][0]
+    id_chat_caption = "chat_caption" #records[2][0]
+    id_chat_username = "username" #records[3][0]
+    id_freq = "freq" #records[1][0]
+    #print(records)
 
     chat_id = update.effective_chat.id
     title = update.effective_chat.title
@@ -162,7 +162,7 @@ def process_text(update, context):
         #print("current freq is already set to " + str(current_freq))
 
     is_no_message_process = (random.randint(1, current_freq) != 1)
-    print("EXIT without processing" + str(is_no_message_process))
+    #print("EXIT without processing " + str(is_no_message_process))
     if is_no_message_process & (update.message.chat.type != "private"):
         return
 
