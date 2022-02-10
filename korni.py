@@ -224,7 +224,7 @@ def process_text(update, context):
         if fix_recommendation is not None:
             string_not = "Не \"" if fix_recommendation[1] is None else "Вероятно не \""
             string_to_add = string_not + checked_word_lower + "\", а " + fix_recommendation[0] + "."
-            string_to_add += "\n" if fix_recommendation[1] is None else " Если вы, конечно, не имели ввиду " + fix_recommendation[1] + ".\n"
+            string_to_add += "\n" if fix_recommendation[1] is None else " Если вы, конечно, не имели в виду " + fix_recommendation[1] + ".\n"
         else:
             for normal_form in morph.normal_forms(checked_word_lower):
                 cursor.execute("SELECT " + id_native + ", \"" + id_correction + "\" FROM rodno_data WHERE " + id_non_native + "='" + normal_form + "' AND '" + checked_word_lower + "' NOT IN (SELECT * FROM unnest(\"" + id_exclusions + "\"))")
@@ -232,7 +232,7 @@ def process_text(update, context):
                 if fix_recommendation is not None:
                     string_not = "Не \"" if fix_recommendation[1] is None else "Вероятно не \""
                     string_to_add = string_not + normal_form + "\", а " + fix_recommendation[0] + "."
-                    string_to_add += "\n" if fix_recommendation[1] is None else " Если вы, конечно, не имели ввиду " + fix_recommendation[1] + ".\n"
+                    string_to_add += "\n" if fix_recommendation[1] is None else " Если вы, конечно, не имели в виду " + fix_recommendation[1] + ".\n"
                     break
         if string_to_add != "":
             if not (string_to_add in output_message): #optimization (maybe)
