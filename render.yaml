@@ -9,20 +9,6 @@ services:
     plan: free # optional; defaults to starter
     numInstances: 1
     envVars:
-      - key: GOOGLE_SHEETS_CREDS_JSON # Imported from Heroku app
-        value: {
-  &quot;type&quot;: &quot;service_account&quot;,
-  &quot;project_id&quot;: &quot;korni-russkogo&quot;,
-  &quot;private_key_id&quot;: &quot;3d1949b6c88b5c11c78e7b0b64723ae9291d42a3&quot;,
-  &quot;private_key&quot;: &quot;-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC5e07qFaMY9X/p\nuVDBt2rnvUtXCAzMOJI2ZTCiCDbWwy1oVz0dWfp0x+Qv0/oV2z1w+nvrQBZg6jqc\nyawST1Xot5h4bLndpoYuzgGUT8cdBY2EO3Z/163DdUtFVCE1F4hyK+dmFwj8RgIu\nRW1YvozM8DIHLD/p/u8RtMXr8Ol1t1DSZdUavWFrZnIoqT0nRzrsqd81+71E1Pf8\nomUm/XaboJ4jLEaT71e1UAbWmXBQpBlh8sL5E7iWJKdWlfYC6dU8SviPpUM3pNVR\nge6xCPpaMGVuUXSzh8fhbPzgxIlz6uGekbGvx+aIhV81pLuVKCjRhxZsOVKFtcVA\nO4w8BtA9AgMBAAECggEADGW6nSij6DRqimL1oUkNlx6JerBMo1l0TmNI6EpKbg7e\nygQAufrsY7dY9WhtUAjWzGZ1ohWnGURhSrRWcQ/b8wwodQN2uzhY7NJzURLcVmsr\nWGddZjHyiOdeCAIq87XrtmPgWYFt0JIrraTm0uEY9KQTrUk5dBNd2S4Jx5l95T1Q\nbCg0QSoi/v9R3yq/rXZOLiVmqInpraAMHelI1kfLhrr5xMxWOT8/2OzNt0wm7B2l\nFioc9HTEKx0AqQiEq6CubsD/pIvgSgQUxdTGAtKGNQ/GXeuMaFiwE8oQTX4UQtje\nq/POMb9ZrV9gxicV9IM5fARV0GjZ/Zd29h04Dx/BcQKBgQDe0YykamAmr0dimC/A\njfsLOMjBur8ex2EN9ddtehb0i7qD/u93rjgBWFUX8o0YlOCqRlRt1/IrFIRMXwJT\nYR86jN+hRSwcoVUHMq8hq/IBypL0HE0PSowPSJSeFp6lXc9PjJvZSo2K4tOmklvO\nyiDaOM3DYuDwPoBBCQA9j471TQKBgQDVGmAQkXHsUAO3tlj+Ck0KP8Pd3bKSSv6W\nbEN3ELTm82xCryrUxox4NJuEuuIytt1vCAddfMjILKqK1rPR7CcfwGVVFkOWrOM8\nvdJd7QiwnSyxYD40jI3iSXaMNxh1dwfmHrsx8yCR7UDNiK15DsWPXYclsNSD+ScZ\nAliF5VkOsQKBgQCm8rs+NbX1Rj9mUED3NWpz7gf9n76zgQ/nNdxD2sZ4VHlbjRg/\nw/mSiGy5lLLDSElNS4TXCIYaYTT/Q/CqKIsNg5/LZdi3Wuoqin9N61dYoD+bR9k1\nK9XlXax9BtW3caJzKBddp86F0Y5jsCW5uxkCaK1DSELhvvK5x9S2S2oBwQKBgAId\nEtrXNnQLjx3hVxyd6YmyfDTVIBJHYCMJy9mAdurbezVmG1yk43vFuc0lNV0fZy7U\nu4330N37Y22hF4N7fh/YfqjLYbw61r4he9ampTFrPag8tiE7S6T06ZIWcc2ocpGb\nuGuUZ7xKyBvBwUa0GM2FNfPvvwvYCsU6uroJPkrhAoGBAKz5VO2UcdxmQu+fhh/J\nLlTfmCjSyCary0IEwPIKY1gVhszs+3SjQH+vErmpb5lg5Q6sXOiktgHKqYQGCvU9\n4MT9frHeW2eCCOBK6LCsK82MpwyELuZEIuiuH8XXgECLWyg5sAm2iFSxV+1AHsli\npOZB5cc6LWIqfq1Cq780HmET\n-----END PRIVATE KEY-----\n&quot;,
-  &quot;client_email&quot;: &quot;mezhemir@korni-russkogo.iam.gserviceaccount.com&quot;,
-  &quot;client_id&quot;: &quot;109782280061884534670&quot;,
-  &quot;auth_uri&quot;: &quot;https://accounts.google.com/o/oauth2/auth&quot;,
-  &quot;token_uri&quot;: &quot;https://oauth2.googleapis.com/token&quot;,
-  &quot;auth_provider_x509_cert_url&quot;: &quot;https://www.googleapis.com/oauth2/v1/certs&quot;,
-  &quot;client_x509_cert_url&quot;: &quot;https://www.googleapis.com/robot/v1/metadata/x509/mezhemir%40korni-russkogo.iam.gserviceaccount.com&quot;
-}
-
       - key: s3_bucket_name # Imported from Heroku app
         value: korni
       - key: DATABASE_URL # Render managed PostgreSQL database
