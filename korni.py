@@ -14,7 +14,7 @@ except ModuleNotFoundError:
     # if no config (i.e. prod)
     pass
 
-PORT = int(os.environ.get('PORT', 5000))
+PORT = int(os.environ.get('PORT', 5432))
 morph = pymorphy2.MorphAnalyzer()
 
 
@@ -200,12 +200,12 @@ def process_text(update, context):
         cursor = conn.cursor()
     else:
         sys.exit(1)
-    cursor.execute("SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'rodno_data'")
-    records = cursor.fetchall()
-    id_non_native = records[0][0]
-    id_native = records[1][0]
-    id_exclusions = records[2][0]
-    id_correction = records[3][0]
+    #cursor.execute("SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'rodno_data'")
+    #records = cursor.fetchall()
+    id_non_native = "МУСОРНОЕ" #records[0][0]
+    id_native = "РОДНОЕ" #records[1][0]
+    id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ" #records[2][0]
+    id_correction = "ПОПРАВКА НА СЛУЧАЙ НЕМУСОРНОГО" #records[3][0]
 
     output_message = ""
 
