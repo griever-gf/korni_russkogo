@@ -1,4 +1,4 @@
-mysql==0.0.3
+mysql-connector-python==8.0.28
 mysqlclient==2.1.0
 pymorphy2==0.9.1
 pymorphy2-dicts==2.4.393442.3710985
