@@ -14,7 +14,7 @@ except ModuleNotFoundError:
     # if no config (i.e. prod)
     pass
 
-PORT = int(os.environ.get('PORT', 3306))
+PORT = int(os.environ.get('PORT', 5000))
 morph = pymorphy2.MorphAnalyzer()
 
 
@@ -38,7 +38,7 @@ def connect_to_db():
             url = urlparse.urlparse(os.environ['CLEARDB_DATABASE_URL'])
             print("url " + os.environ['CLEARDB_DATABASE_URL'])
             connect = mysql.connector.connect(database=url.path[1:], user=url.username, password=url.password,
-                                              host=url.hostname, port=PORT)
+                                              host=url.hostname)
         else:
             connect = mysql.connector.connect(database=config.db_name, user=config.db_user, password=config.db_password,
                                               host=config.db_host)
