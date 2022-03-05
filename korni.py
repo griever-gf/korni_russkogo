@@ -1,6 +1,6 @@
 import re
 import pymorphy2
-import psycopg2
+import mysql.connector
 import os
 import sys
 import random
@@ -14,7 +14,7 @@ except ModuleNotFoundError:
     # if no config (i.e. prod)
     pass
 
-PORT = int(os.environ.get('PORT', 5432))
+PORT = int(os.environ.get('PORT', 3306))
 morph = pymorphy2.MorphAnalyzer()
 
 
@@ -34,14 +34,14 @@ def message_info(update, context):
 
 def connect_to_db():
     try:
-        if 'DATABASE_URL' in os.environ:  # if prod
-            url = urlparse.urlparse(os.environ['DATABASE_URL'])
-            connect = psycopg2.connect(dbname=url.path[1:], user=url.username, password=url.password,
-                                    host=url.hostname, port=url.port)
+        if 'CLEARDB_DATABASE_URL' in os.environ:  # if prod
+            url = urlparse.urlparse(os.environ['CLEARDB_DATABASE_URL'])
+            connect = mysql.connector.connect(database=url.path[1:], user=url.username, password=url.password,
+                                              host=url.hostname, port=url.port)
         else:
-            connect = psycopg2.connect(dbname=config.db_name, user=config.db_user, password=config.db_password,
-                                    host=config.db_host)
-    except psycopg2.OperationalError as e:
+            connect = mysql.connector.connect(database=config.db_name, user=config.db_user, password=config.db_password,
+                                              host=config.db_host)
+    except mysql.connector.Error as e:
         print('Unable to connect!\n{0}').format(e)
         connect = None
     finally:
@@ -59,9 +59,9 @@ def get_db_frequency(cht_id):
     cursor.close()
     conn.close()
     if res is not None:
-        #print("GET FREQ: " + str(res[0]))
         return res[0]
     else:
+        print("Can't extract frequency for chat " + str(cht_id))
         return res
 
 
@@ -106,14 +106,11 @@ def set_db_frequency(fq, update):
         cursor = conn.cursor()
     else:
         sys.exit(1)
-    # get column names
-    #cursor.execute("SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'freq_data'")
-    #records = cursor.fetchall()
-    id_chat_id = "chat_id" #records[0][0]
-    id_chat_caption = "chat_caption" #records[2][0]
-    id_chat_username = "username" #records[3][0]
-    id_freq = "freq" #records[1][0]
-    #print(records)
+
+    id_chat_id = "chat_id"
+    id_chat_caption = "chat_caption"
+    id_chat_username = "username"
+    id_freq = "freq"
 
     chat_id = update.effective_chat.id
     title = update.effective_chat.title
@@ -127,14 +124,13 @@ def set_db_frequency(fq, update):
             username = "@" + user_username if (user_username is not None) else update.effective_user.first_name
         else:
             username = "NONE"
+
     cursor.execute(
-        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq
-        + ") VALUES(" + str(chat_id) + ", '" + title + "', '" + username + "', " + str(fq) + ") " +
-        "ON CONFLICT (" + id_chat_id + ") DO UPDATE SET " +
-        "(" + id_chat_caption + ", " + id_chat_username + ", " + id_freq + ") = (" +
-        "EXCLUDED." + id_chat_caption + ", " +
-        "EXCLUDED." + id_chat_username + ", " +
-        "EXCLUDED." + id_freq + ")")
+        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq +
+        ") VALUES(" + str(chat_id) + ", '" + title + "', '" + username + "', " + str(fq) + ") " +
+        "ON DUPLICATE KEY UPDATE " +
+        id_chat_caption + "='" + title + "', " + id_chat_username + "='" + username + "', " + id_freq + "=" + str(fq))
+
     conn.commit()
     cursor.close()
     conn.close()
@@ -142,45 +138,19 @@ def set_db_frequency(fq, update):
 
 # Let's analyze all the incoming text
 def process_text(update, context):
-    #print(datetime.datetime.now())
     if update.message is None:
         return
-    """chat_type = update.message.chat.type
-    print("chat type: " + chat_type)"""
+
     chat_id = update.effective_chat.id
-    #print("chat id: " + str(chat_id))
 
     current_freq = get_db_frequency(chat_id)
     if current_freq is None:
-        #print("current freq is undefined")
         current_freq = 1
         set_db_frequency(current_freq, update)
-    #else:
-        #print("current freq is already set to " + str(current_freq))
 
     is_no_message_process = (random.randint(1, current_freq) != 1)
-    #print("EXIT without processing " + str(is_no_message_process))
     if is_no_message_process & (update.message.chat.type != "private"):
         return
-
-    """username = update.effective_chat.username
-    print("chat username: " + (username if (username is not None) else "EMPTY"))
-    title = update.effective_chat.title
-    print("chat title: " + (title if (title is not None) else "EMPTY"))
-    user_id = update.effective_user.id
-    print("user trigger id: " + str(user_id if (user_id is not None) else "EMPTY")) #it's user id not bot id
-    user_username = update.effective_user.username
-    print("user trigger name: " + ("@"+str(user_username) if (user_username is not None) else update.effective_user.first_name))  # it's user id not bot id
-    bot_id = context.bot.id
-    print("bot id: " + str(bot_id if (bot_id is not None) else "EMPTY"))
-    bot_name = context.bot.name
-    print("bot name: " + bot_name)
-    bot_chat_member = context.bot.getChatMember(chat_id, bot_id)
-    if bot_chat_member.status == telegram.ChatMember.RESTRICTED:
-        perm = bot_chat_member.can_send_messages
-        print("bot perm can_send_messages: " + str(perm))
-    else:
-        print("no restrictions")"""
 
     text_to_split = update.message.caption if (update.message.text is None) else update.message.text
 
@@ -200,12 +170,11 @@ def process_text(update, context):
         cursor = conn.cursor()
     else:
         sys.exit(1)
-    #cursor.execute("SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'rodno_data'")
-    #records = cursor.fetchall()
-    id_non_native = "МУСОРНОЕ" #records[0][0]
-    id_native = "РОДНОЕ" #records[1][0]
-    id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ" #records[2][0]
-    id_correction = "ПОПРАВКА НА СЛУЧАЙ НЕМУСОРНОГО" #records[3][0]
+
+    id_non_native = "МУСОРНОЕ"
+    id_native = "РОДНОЕ"
+    id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ"
+    id_inexact = "ПОПРАВКА НА СЛУЧАЙ НЕМУСОРНОГО"
 
     output_message = ""
 
@@ -219,7 +188,7 @@ def process_text(update, context):
             continue
 
         string_to_add = ""
-        cursor.execute("SELECT " + id_native + ", \"" + id_correction + "\" FROM rodno_data WHERE " + id_non_native + "='" + checked_word_lower + "'")
+        cursor.execute("SELECT " + id_native + ", `" + id_inexact + "` FROM rodno_data WHERE " + id_non_native + "='" + checked_word_lower + "'")
         fix_recommendation = cursor.fetchone()
         if fix_recommendation is not None:
             string_not = "Не \"" if fix_recommendation[1] is None else "Вероятно не \""
@@ -227,15 +196,21 @@ def process_text(update, context):
             string_to_add += "\n" if fix_recommendation[1] is None else " Если вы, конечно, не имели в виду " + fix_recommendation[1] + ".\n"
         else:
             for normal_form in morph.normal_forms(checked_word_lower):
-                cursor.execute("SELECT " + id_native + ", \"" + id_correction + "\" FROM rodno_data WHERE " + id_non_native + "='" + normal_form + "' AND '" + checked_word_lower + "' NOT IN (SELECT * FROM unnest(\"" + id_exclusions + "\"))")
+                cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions +
+                               "` FROM rodno_data WHERE " + id_non_native + "='" + normal_form + "'")
                 fix_recommendation = cursor.fetchone()
                 if fix_recommendation is not None:
+                    if fix_recommendation[2] is not None:  # if there are some excluded words
+                        excls = fix_recommendation[2].split(',')
+                        excls_stripped = [s.strip(" {}") for s in excls]
+                        if checked_word_lower in excls_stripped:  # if current word is exclusion
+                            break
                     string_not = "Не \"" if fix_recommendation[1] is None else "Вероятно не \""
                     string_to_add = string_not + normal_form + "\", а " + fix_recommendation[0] + "."
                     string_to_add += "\n" if fix_recommendation[1] is None else " Если вы, конечно, не имели в виду " + fix_recommendation[1] + ".\n"
                     break
         if string_to_add != "":
-            if not (string_to_add in output_message): #optimization (maybe)
+            if not (string_to_add in output_message):  #optimization (maybe)
                 output_message += string_to_add
 
     cursor.close()
@@ -275,7 +250,6 @@ def main():
     dp.add_handler(CommandHandler('vzvod', change_react_frequency))
     dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) & (~Filters.chat_type.channel) | Filters.chat_type.private),
                                   process_text, pass_user_data=True))
-
 
     if 'TG_API_KEY' in os.environ:  # if prod
         updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"),
