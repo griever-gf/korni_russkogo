@@ -36,8 +36,9 @@ def connect_to_db():
     try:
         if 'CLEARDB_DATABASE_URL' in os.environ:  # if prod
             url = urlparse.urlparse(os.environ['CLEARDB_DATABASE_URL'])
+            print("url " + os.environ['CLEARDB_DATABASE_URL'])
             connect = mysql.connector.connect(database=url.path[1:], user=url.username, password=url.password,
-                                              host=url.hostname, port=url.port)
+                                              host=url.hostname, port=PORT)
         else:
             connect = mysql.connector.connect(database=config.db_name, user=config.db_user, password=config.db_password,
                                               host=config.db_host)
