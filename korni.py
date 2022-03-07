@@ -136,6 +136,11 @@ def set_db_frequency(fq, update):
     cursor.close()
     conn.close()
 
+def correction_string(incoming_word, correction, exclusion):
+    string_not = "Не \"" if exclusion is None else "Вероятно не \""
+    string_res = string_not + incoming_word + "\", а " + correction + "."
+    string_res += "\n" if exclusion is None else " Если вы, конечно, не имели в виду " + exclusion + ".\n"
+    return string_res
 
 # Let's analyze all the incoming text
 def process_text(update, context):
@@ -192,9 +197,7 @@ def process_text(update, context):
         cursor.execute("SELECT " + id_native + ", `" + id_inexact + "` FROM rodno_data WHERE " + id_non_native + "='" + checked_word_lower + "'")
         fix_recommendation = cursor.fetchone()
         if fix_recommendation is not None:
-            string_not = "Не \"" if fix_recommendation[1] is None else "Вероятно не \""
-            string_to_add = string_not + checked_word_lower + "\", а " + fix_recommendation[0] + "."
-            string_to_add += "\n" if fix_recommendation[1] is None else " Если вы, конечно, не имели в виду " + fix_recommendation[1] + ".\n"
+            string_to_add = correction_string(checked_word_lower, fix_recommendation[0], fix_recommendation[1])
         else:
             for normal_form in morph.normal_forms(checked_word_lower):
                 cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions +
@@ -206,10 +209,36 @@ def process_text(update, context):
                         excls_stripped = [s.strip(" {}") for s in excls]
                         if checked_word_lower in excls_stripped:  # if current word is exclusion
                             break
-                    string_not = "Не \"" if fix_recommendation[1] is None else "Вероятно не \""
-                    string_to_add = string_not + normal_form + "\", а " + fix_recommendation[0] + "."
-                    string_to_add += "\n" if fix_recommendation[1] is None else " Если вы, конечно, не имели в виду " + fix_recommendation[1] + ".\n"
+                    string_to_add = correction_string(normal_form, fix_recommendation[0], fix_recommendation[1])
                     break
+
+        if string_to_add == "":  # check for word parts divided by '-'
+            splitted_incoming_words = checked_word_lower.split('-')
+            if len(splitted_incoming_words) > 1:
+                for splitted_part in splitted_incoming_words:
+                    cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions +
+                                   "` FROM rodno_data WHERE " + id_non_native + "='" + splitted_part + "'")
+                    fix_recommendation = cursor.fetchone()
+                    if fix_recommendation is not None:
+                        corr_str = correction_string(splitted_part, fix_recommendation[0], fix_recommendation[1])
+                        if not (corr_str in output_message):
+                            string_to_add += corr_str
+                    else:
+                        for normal_form in morph.normal_forms(splitted_part):
+                            cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions +
+                                           "` FROM rodno_data WHERE " + id_non_native + "='" + normal_form + "'")
+                            fix_recommendation = cursor.fetchone()
+                            if fix_recommendation is not None:
+                                if fix_recommendation[2] is not None:  # if there are some excluded words
+                                    excls = fix_recommendation[2].split(',')
+                                    excls_stripped = [s.strip(" {}") for s in excls]
+                                    if splitted_part in excls_stripped:  # if current word is exclusion
+                                        break
+                                corr_str = correction_string(normal_form, fix_recommendation[0], fix_recommendation[1])
+                                if not (corr_str in output_message):
+                                    string_to_add += corr_str
+                                break
+
         if string_to_add != "":
             if not (string_to_add in output_message):  #optimization (maybe)
                 output_message += string_to_add
