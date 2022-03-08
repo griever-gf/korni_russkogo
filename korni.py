@@ -216,6 +216,8 @@ def process_text(update, context):
             splitted_incoming_words = checked_word_lower.split('-')
             if len(splitted_incoming_words) > 1:
                 for splitted_part in splitted_incoming_words:
+                    if splitted_part in ["го"]:
+                        continue
                     cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions +
                                    "` FROM rodno_data WHERE " + id_non_native + "='" + splitted_part + "'")
                     fix_recommendation = cursor.fetchone()
