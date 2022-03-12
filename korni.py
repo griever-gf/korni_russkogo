@@ -6,7 +6,7 @@ import os
 #import random
 #import urllib.parse as urlparse
 from telegram.ext import Updater, MessageHandler, Filters#, CommandHandler
-#from telegram import ChatMember
+from telegram import ChatMember
 
 try:
     import config
@@ -164,10 +164,10 @@ def correction_string_from_normal_forms(crsr, chkd_wrd_lwr):
 """
 # Let's analyze all the incoming text
 def process_text(update, context):
-    """if update.message is None:
+    if update.message is None:
         return
 
-    chat_id = update.effective_chat.id
+    """chat_id = update.effective_chat.id
 
     current_freq = get_db_frequency(chat_id)
     if current_freq is None:
@@ -179,13 +179,14 @@ def process_text(update, context):
         return
 
     text_to_split = update.message.caption if (update.message.text is None) else update.message.text
-
+    """
     # checks before processing
     if update.message.chat.type != "private":
         bot_chat_member = context.bot.getChatMember(update.effective_chat.id, context.bot.id)
         if bot_chat_member.status == ChatMember.RESTRICTED:
             if not bot_chat_member.can_send_messages:
                 return
+    """
     else:
         if text_to_split == "/start":
             message_how(update, context)
@@ -278,7 +279,7 @@ def main():
 
     if 'TG_API_KEY' in os.environ:  # if prod
         updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"),
-                              webhook_url='https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+                              webhook_url='https://korni-not-working.herokuapp.com/' + os.getenv("TG_API_KEY"))
     else:  # if dev
         updater.start_polling()
 
