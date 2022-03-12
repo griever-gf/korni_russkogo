@@ -16,6 +16,15 @@ except ModuleNotFoundError:
 
 PORT = int(os.environ.get('PORT', 5000))
 morph = pymorphy2.MorphAnalyzer()
+id_chat_id = "chat_id"
+id_chat_caption = "chat_caption"
+id_chat_username = "username"
+id_freq = "freq"
+id_non_native = "МУСОРНОЕ"
+id_native = "РОДНОЕ"
+id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ"
+id_inexact = "ПОПРАВКА НА СЛУЧАЙ НЕМУСОРНОГО"
+id_extra_normal_form = "ДОП. РАСПОЗНАВАЕМОЕ ИСХОДНОЕ ИСКАЖЕНИЕ"
 
 
 def message_how(update, context):
@@ -36,7 +45,6 @@ def connect_to_db():
     try:
         if 'CLEARDB_DATABASE_URL' in os.environ:  # if prod
             url = urlparse.urlparse(os.environ['CLEARDB_DATABASE_URL'])
-            print("url " + os.environ['CLEARDB_DATABASE_URL'])
             connect = mysql.connector.connect(database=url.path[1:], user=url.username, password=url.password,
                                               host=url.hostname)
         else:
@@ -108,11 +116,6 @@ def set_db_frequency(fq, update):
     else:
         sys.exit(1)
 
-    id_chat_id = "chat_id"
-    id_chat_caption = "chat_caption"
-    id_chat_username = "username"
-    id_freq = "freq"
-
     chat_id = update.effective_chat.id
     title = update.effective_chat.title
     if title is None:
@@ -140,6 +143,23 @@ def correction_string(incoming_word, correction, exclusion):
     string_not = "Не \"" if exclusion is None else "Вероятно не \""
     string_res = string_not + incoming_word + "\", а " + correction + "."
     string_res += "\n" if exclusion is None else " Если вы, конечно, не имели в виду " + exclusion + ".\n"
+    return string_res
+
+def correction_string_from_normal_forms(crsr, chkd_wrd_lwr):
+    string_res = ""
+    for normal_form in morph.normal_forms(chkd_wrd_lwr):
+        crsr.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions + "`, " + id_non_native +
+                     " FROM rodno_data WHERE " +
+                     id_non_native + "='" + normal_form + "' OR `" + id_extra_normal_form + "`='" + normal_form + "'")
+        fix_recommendation = crsr.fetchone()
+        if fix_recommendation is not None:
+            if fix_recommendation[2] is not None:  # if there are some excluded words
+                excls = fix_recommendation[2].split(',')
+                excls_stripped = [s.strip(" {}") for s in excls]
+                if chkd_wrd_lwr in excls_stripped:  # if current word is exclusion
+                    break
+            string_res = correction_string(fix_recommendation[3], fix_recommendation[0], fix_recommendation[1])
+            break
     return string_res
 
 # Let's analyze all the incoming text
@@ -177,11 +197,6 @@ def process_text(update, context):
     else:
         sys.exit(1)
 
-    id_non_native = "МУСОРНОЕ"
-    id_native = "РОДНОЕ"
-    id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ"
-    id_inexact = "ПОПРАВКА НА СЛУЧАЙ НЕМУСОРНОГО"
-
     output_message = ""
 
     # let's split it by words using re.sub(pattern, repl, string, count=0, flags=0)
@@ -193,24 +208,12 @@ def process_text(update, context):
         if checked_word_lower == "":
             continue
 
-        string_to_add = ""
         cursor.execute("SELECT " + id_native + ", `" + id_inexact + "` FROM rodno_data WHERE " + id_non_native + "='" + checked_word_lower + "'")
         fix_recommendation = cursor.fetchone()
         if fix_recommendation is not None:
             string_to_add = correction_string(checked_word_lower, fix_recommendation[0], fix_recommendation[1])
         else:
-            for normal_form in morph.normal_forms(checked_word_lower):
-                cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions +
-                               "` FROM rodno_data WHERE " + id_non_native + "='" + normal_form + "'")
-                fix_recommendation = cursor.fetchone()
-                if fix_recommendation is not None:
-                    if fix_recommendation[2] is not None:  # if there are some excluded words
-                        excls = fix_recommendation[2].split(',')
-                        excls_stripped = [s.strip(" {}") for s in excls]
-                        if checked_word_lower in excls_stripped:  # if current word is exclusion
-                            break
-                    string_to_add = correction_string(normal_form, fix_recommendation[0], fix_recommendation[1])
-                    break
+            string_to_add = correction_string_from_normal_forms(cursor, checked_word_lower)
 
         if string_to_add == "":  # check for word parts divided by '-'
             splitted_incoming_words = checked_word_lower.split('-')
@@ -223,23 +226,12 @@ def process_text(update, context):
                     fix_recommendation = cursor.fetchone()
                     if fix_recommendation is not None:
                         corr_str = correction_string(splitted_part, fix_recommendation[0], fix_recommendation[1])
-                        if not (corr_str in output_message):
+                        if not (corr_str in output_message) and not (corr_str in string_to_add):
                             string_to_add += corr_str
                     else:
-                        for normal_form in morph.normal_forms(splitted_part):
-                            cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions +
-                                           "` FROM rodno_data WHERE " + id_non_native + "='" + normal_form + "'")
-                            fix_recommendation = cursor.fetchone()
-                            if fix_recommendation is not None:
-                                if fix_recommendation[2] is not None:  # if there are some excluded words
-                                    excls = fix_recommendation[2].split(',')
-                                    excls_stripped = [s.strip(" {}") for s in excls]
-                                    if splitted_part in excls_stripped:  # if current word is exclusion
-                                        break
-                                corr_str = correction_string(normal_form, fix_recommendation[0], fix_recommendation[1])
-                                if not (corr_str in output_message):
-                                    string_to_add += corr_str
-                                break
+                        corr_str = correction_string_from_normal_forms(cursor, splitted_part)
+                        if not (corr_str in output_message) and not (corr_str in string_to_add):
+                            string_to_add += corr_str
 
         if string_to_add != "":
             if not (string_to_add in output_message):  #optimization (maybe)
