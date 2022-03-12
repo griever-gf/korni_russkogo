@@ -1,12 +1,12 @@
-import re
+#import re
 import pymorphy2
-import mysql.connector
+#import mysql.connector
 import os
-import sys
-import random
-import urllib.parse as urlparse
-from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
-from telegram import ChatMember
+#import sys
+#import random
+#import urllib.parse as urlparse
+from telegram.ext import Updater, MessageHandler, Filters#, CommandHandler
+#from telegram import ChatMember
 
 try:
     import config
@@ -26,7 +26,7 @@ id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ"
 id_inexact = "ПОПРАВКА НА СЛУЧАЙ НЕМУСОРНОГО"
 id_extra_normal_form = "ДОП. РАСПОЗНАВАЕМОЕ ИСХОДНОЕ ИСКАЖЕНИЕ"
 
-
+"""
 def message_how(update, context):
     # Send a message when the command /kak is issued.
     update.message.reply_text('Способы использования:\nНаилучший способ - добавить (ро)бота к себе в болталки (беседы),'
@@ -161,10 +161,10 @@ def correction_string_from_normal_forms(crsr, chkd_wrd_lwr):
             string_res = correction_string(fix_recommendation[3], fix_recommendation[0], fix_recommendation[1])
             break
     return string_res
-
+"""
 # Let's analyze all the incoming text
 def process_text(update, context):
-    if update.message is None:
+    """if update.message is None:
         return
 
     chat_id = update.effective_chat.id
@@ -260,7 +260,8 @@ def process_text(update, context):
     elif update.message.chat.type == 'private':
         output_message = "Языковая дружина проверила ваши письмена и не нашла ничего зазорного. Ладный русский слог, иностранщина не обнаружена, отпускаем вас."
         update.message.reply_text(output_message)
-
+    """
+    update.message.reply_text("Этот робот более не работает, так как переехал на @korni_rus_bot. Удаляйте этого робота и добавляйте @korni_rus_bot вместо.")
 
 def main():
     """Start the bot."""
@@ -269,9 +270,9 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler('kak', message_how))
-    dp.add_handler(CommandHandler('sved', message_info))
-    dp.add_handler(CommandHandler('vzvod', change_react_frequency))
+    #dp.add_handler(CommandHandler('kak', message_how))
+    #dp.add_handler(CommandHandler('sved', message_info))
+    #dp.add_handler(CommandHandler('vzvod', change_react_frequency))
     dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) & (~Filters.chat_type.channel) | Filters.chat_type.private),
                                   process_text, pass_user_data=True))
 
