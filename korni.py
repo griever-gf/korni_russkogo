@@ -60,7 +60,7 @@ def connect_to_db():
 def get_db_frequency(cht_id):
     conn = connect_to_db()
     if conn is not None:
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
     else:
         sys.exit(1)
     cursor.execute("SELECT freq FROM freq_data WHERE chat_id='" + str(cht_id) + "'")
@@ -112,7 +112,7 @@ def change_react_frequency(update, context):
 def set_db_frequency(fq, update):
     conn = connect_to_db()
     if conn is not None:
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
     else:
         sys.exit(1)
 
@@ -193,11 +193,12 @@ def process_text(update, context):
 
     conn = connect_to_db()
     if conn is not None:
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
     else:
         sys.exit(1)
 
     output_message = ""
+    text_to_split = text_to_split.encode('cp1251', 'ignore').decode('cp1251')
 
     # let's split it by words using re.sub(pattern, repl, string, count=0, flags=0)
     # [\w] means any alphanumeric character and is equal to the character set [a-zA-Z0-9_]
