@@ -260,7 +260,10 @@ def process_text(update, context):
             if "#" in lines[rnd_val]:
                 lines[rnd_val] = lines[rnd_val].replace("#", update.message.from_user.first_name if (random.randint(1, 2) == 1) | (update.message.from_user.username is None) else "@" + update.message.from_user.username)
             output_message += lines[rnd_val]
-        update.message.reply_text(output_message)
+        if len(output_message) > 4096:
+            update.message.reply_text(output_message[0:4096])
+        else:
+            update.message.reply_text(output_message)
     elif update.message.chat.type == 'private':
         output_message = "Языковая дружина проверила ваши письмена и не нашла ничего зазорного. Ладный русский слог, иностранщина не обнаружена, отпускаем вас."
         update.message.reply_text(output_message)
