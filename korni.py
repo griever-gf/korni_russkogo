@@ -25,6 +25,7 @@ id_native = "РОДНОЕ"
 id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ"
 id_inexact = "ПОПРАВКА НА СЛУЧАЙ НЕМУСОРНОГО"
 id_extra_normal_form = "ДОП. РАСПОЗНАВАЕМОЕ ИСХОДНОЕ ИСКАЖЕНИЕ"
+id_unrecognized_forms = "НЕРАСПОЗНАВАЕМЫЕ ИСКАЖЕНИЯ"
 
 
 def message_how(update, context):
@@ -208,11 +209,12 @@ def process_text(update, context):
         checked_word_lower = checked_word.lower().removesuffix("-то").removesuffix("-ка").removesuffix("-таки").removeprefix("таки-")
         if checked_word_lower == "":
             continue
-
-        cursor.execute("SELECT " + id_native + ", `" + id_inexact + "` FROM rodno_data WHERE " + id_non_native + "='" + checked_word_lower + "'")
+        cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, " + id_non_native + " FROM rodno_data WHERE " +
+                       id_non_native + "='" + checked_word_lower +
+                       "' OR LOCATE('" + checked_word_lower + ",', `" + id_unrecognized_forms + "`)")
         fix_recommendation = cursor.fetchone()
         if fix_recommendation is not None:
-            string_to_add = correction_string(checked_word_lower, fix_recommendation[0], fix_recommendation[1])
+            string_to_add = correction_string(fix_recommendation[2], fix_recommendation[0], fix_recommendation[1])
         else:
             string_to_add = correction_string_from_normal_forms(cursor, checked_word_lower)
 
@@ -222,11 +224,12 @@ def process_text(update, context):
                 for splitted_part in splitted_incoming_words:
                     if splitted_part in ["го", "ок"]:
                         continue
-                    cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, `" + id_exclusions +
-                                   "` FROM rodno_data WHERE " + id_non_native + "='" + splitted_part + "'")
+                    cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, " + id_non_native +
+                                   " FROM rodno_data WHERE " + id_non_native + "='" + splitted_part +
+                                   "' OR LOCATE('" + splitted_part + ",', `" + id_unrecognized_forms + "`)")
                     fix_recommendation = cursor.fetchone()
                     if fix_recommendation is not None:
-                        corr_str = correction_string(splitted_part, fix_recommendation[0], fix_recommendation[1])
+                        corr_str = correction_string(fix_recommendation[2], fix_recommendation[0], fix_recommendation[1])
                         if not (corr_str in output_message) and not (corr_str in string_to_add):
                             string_to_add += corr_str
                     else:
