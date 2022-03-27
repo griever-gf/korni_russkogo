@@ -211,7 +211,7 @@ def process_text(update, context):
             continue
         cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, " + id_non_native + " FROM rodno_data WHERE " +
                        id_non_native + "='" + checked_word_lower +
-                       "' OR LOCATE('" + checked_word_lower + ",', `" + id_unrecognized_forms + "`)")
+                       "' OR LOCATE(' " + checked_word_lower + ",', `" + id_unrecognized_forms + "`)")
         fix_recommendation = cursor.fetchone()
         if fix_recommendation is not None:
             string_to_add = correction_string(fix_recommendation[2], fix_recommendation[0], fix_recommendation[1])
@@ -226,7 +226,7 @@ def process_text(update, context):
                         continue
                     cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, " + id_non_native +
                                    " FROM rodno_data WHERE " + id_non_native + "='" + splitted_part +
-                                   "' OR LOCATE('" + splitted_part + ",', `" + id_unrecognized_forms + "`)")
+                                   "' OR LOCATE(' " + splitted_part + ",', `" + id_unrecognized_forms + "`)")
                     fix_recommendation = cursor.fetchone()
                     if fix_recommendation is not None:
                         corr_str = correction_string(fix_recommendation[2], fix_recommendation[0], fix_recommendation[1])
