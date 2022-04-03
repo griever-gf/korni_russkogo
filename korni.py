@@ -4,6 +4,7 @@ import mysql.connector
 import os
 import sys
 import random
+import string
 import urllib.parse as urlparse
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 from telegram import ChatMember
@@ -345,8 +346,15 @@ def process_text(update, context):
                 case 0:
                     output_message += lines[0]
                 case 1:
-                    if "#" in lines[rnd_val]:
-                        lines[rnd_val] = lines[rnd_val].replace("#", update.message.from_user.first_name if (random.randint(1, 2) == 1) | (update.message.from_user.username is None) else "@" + update.message.from_user.username)
+                    pos_sharp = lines[rnd_val].find('#')
+                    if pos_sharp != -1:
+                        for i in range(pos_sharp - 1, -1, -1):
+                            if lines[rnd_val][i] in string.punctuation or lines[rnd_val][i] == ' ':
+                                if lines[rnd_val][i] in [',', ':', ';']:
+                                    lines[rnd_val] = lines[rnd_val][0:i] + lines[rnd_val][pos_sharp + 1:len(lines[rnd_val])]
+                                    break
+                            else:
+                                break
                     output_message += lines[rnd_val]
                 case 2:
                     output_message = output_message.removesuffix("\n")
