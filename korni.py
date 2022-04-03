@@ -20,6 +20,7 @@ id_chat_id = "chat_id"
 id_chat_caption = "chat_caption"
 id_chat_username = "username"
 id_freq = "freq"
+id_exhortation = "exhortation"
 id_non_native = "МУСОРНОЕ"
 id_native = "РОДНОЕ"
 id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ"
@@ -58,7 +59,7 @@ def connect_to_db():
         return connect
 
 
-def get_db_frequency(cht_id):
+def get_chat_frequency(cht_id):
     conn = connect_to_db()
     if conn is not None:
         cursor = conn.cursor(buffered=True)
@@ -75,13 +76,29 @@ def get_db_frequency(cht_id):
         return res
 
 
-def change_react_frequency(update, context):
+def get_chat_exhortation(cht_id):
+    conn = connect_to_db()
+    if conn is not None:
+        cursor = conn.cursor(buffered=True)
+    else:
+        sys.exit(1)
+    cursor.execute("SELECT exhortation FROM freq_data WHERE chat_id='" + str(cht_id) + "'")
+    res = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if res is not None:
+        return res[0]
+    else:
+        print("Can't extract exhortation for chat " + str(cht_id))
+        return res
+
+
+def change_react_frequency(update, context):  # Process when the command /vzvod is issued.
     def send_message_when_wrong_argument():
         update.message.reply_text("Используйте целое числовое значение в промежутке от 1 до 50 в строке после приказа "
                                   "/vzvod и пробела для настройки ретивости робота в данной болталке.\nНапример: "
                                   "\"/vzvod 1\" - взводиться всегда, \"/vzvod 2\" - взводиться на каждое второе "
                                   "сообщение, \"/vzvod 10\" - взводиться на каждое десятое и т.п.")
-    # Process when the command /vzvod is issued.
     if update.message is None:
         return
     if update.message.chat.type == "private":
@@ -105,12 +122,50 @@ def change_react_frequency(update, context):
     if (param < 1) | (param > 50):
         send_message_when_wrong_argument()
         return
-    set_db_frequency(param, update)
+    set_chat_frequency(param, update)
     update.message.reply_text("Ретивость робота в данной болталке установлена на " +
                               f'{100/param:4.2f}'.replace('.', ',') + "%")
 
 
-def set_db_frequency(fq, update):
+def change_private_exhortation_mode(update, context):  # Process when the command /nazid is issued.
+    def send_message_when_wrong_argument():
+        update.message.reply_text("Используйте следующие значения в строке после приказа "
+                                  "/nazid и пробела для настройки вида назиданий:\n"
+                                  "\"/nazid korni\" - всегда назидание вида \"берегите корни\" (по умолчанию),\n" 
+                                  "\"/nazid vse\" - все виды назиданий (так же, как в болталках),\n"
+                                  "\"/nazid net\" - назидания не добавляются.")
+    if update.message is None:
+        return
+    if update.message.chat.type != "private":
+        update.message.reply_text("Настройка вида назиданий доступна только в личке, а не в болталках!")
+        return
+    if len(context.args) > 0:
+        try:
+            param = context.args[0]
+        except ValueError:
+            send_message_when_wrong_argument()
+            return
+    else:
+        send_message_when_wrong_argument()
+        return
+    match param:
+        case "korni":
+            value = 0
+            str_reply = "установлены по умолчанию"
+        case "vse":
+            value = 1
+            str_reply = "включены полностью"
+        case "net":
+            value = 2
+            str_reply = "выключены полностью"
+        case _:
+            send_message_when_wrong_argument()
+            return
+    set_private_chat_exhortation(value, update)
+    update.message.reply_text("Назидания робота в личной переписке " + str_reply + ".")
+
+
+def set_chat_frequency(fq, update):
     conn = connect_to_db()
     if conn is not None:
         cursor = conn.cursor(buffered=True)
@@ -131,20 +186,45 @@ def set_db_frequency(fq, update):
             username = "NONE"
 
     cursor.execute(
-        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq +
-        ") VALUES(" + str(chat_id) + ", '" + title + "', '" + username + "', " + str(fq) + ") " +
+        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
+        ") VALUES(" + str(chat_id) + ", '" + title + "', '" + username + "', " + str(fq) + ", 1) " +
         "ON DUPLICATE KEY UPDATE " +
-        id_chat_caption + "='" + title + "', " + id_chat_username + "='" + username + "', " + id_freq + "=" + str(fq))
+        id_chat_caption + "='" + title + "', " + id_chat_username + "='" + username + "', " + id_freq + "=" + str(fq) + ", " + id_exhortation + "=NULL")
 
     conn.commit()
     cursor.close()
     conn.close()
+
+
+def set_private_chat_exhortation(val, update):
+        conn = connect_to_db()
+        if conn is not None:
+            cursor = conn.cursor(buffered=True)
+        else:
+            sys.exit(1)
+
+        chat_id = update.effective_chat.id
+        title = "PRIVATE"
+        user_username = update.effective_user.username
+        username = "@" + user_username if (user_username is not None) else update.effective_user.first_name
+
+        cursor.execute(
+            "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
+            ") VALUES(" + str(chat_id) + ", '" + title + "', '" + username + "', 1, " + str(val) + ") " +
+            "ON DUPLICATE KEY UPDATE " +
+            id_chat_caption + "='" + title + "', " + id_chat_username + "='" + username + "', " + id_freq + "=NULL, " + id_exhortation + "=" + str(val))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
 
 def correction_string(incoming_word, correction, exclusion):
     string_not = "Не \"" if exclusion is None else "Вероятно не \""
     string_res = string_not + incoming_word + "\", а " + correction + "."
     string_res += "\n" if exclusion is None else " Если вы, конечно, не имели в виду " + exclusion + ".\n"
     return string_res
+
 
 def correction_string_from_normal_forms(crsr, chkd_wrd_lwr):
     string_res = ""
@@ -163,6 +243,7 @@ def correction_string_from_normal_forms(crsr, chkd_wrd_lwr):
             break
     return string_res
 
+
 # Let's analyze all the incoming text
 def process_text(update, context):
     if update.message is None:
@@ -170,14 +251,15 @@ def process_text(update, context):
 
     chat_id = update.effective_chat.id
 
-    current_freq = get_db_frequency(chat_id)
-    if current_freq is None:
-        current_freq = 1
-        set_db_frequency(current_freq, update)
-
-    is_no_message_process = (random.randint(1, current_freq) != 1)
-    if is_no_message_process & (update.message.chat.type != "private"):
-        return
+    if update.message.chat.type != "private":
+        current_freq = get_chat_frequency(chat_id)
+        if current_freq is None:
+            current_freq = 1
+            set_chat_frequency(current_freq, update)
+        else:
+            is_no_message_process = (random.randint(1, current_freq) != 1)
+            if is_no_message_process:
+                return
 
     text_to_split = update.message.caption if (update.message.text is None) else update.message.text
 
@@ -255,7 +337,19 @@ def process_text(update, context):
                 lines_ex[rnd_extra] = lines_ex[rnd_extra].replace("#", update.message.from_user.first_name if random.randint(1, 2) == 1 else "@" + update.message.from_user.username)
             output_message += lines_ex[rnd_extra]
         elif update.message.chat.type == 'private':
-            output_message += lines[0]
+            exhortation = get_chat_exhortation(chat_id)
+            match exhortation:
+                case None:
+                    set_private_chat_exhortation(0, update)
+                    output_message += lines[0]
+                case 0:
+                    output_message += lines[0]
+                case 1:
+                    if "#" in lines[rnd_val]:
+                        lines[rnd_val] = lines[rnd_val].replace("#", update.message.from_user.first_name if (random.randint(1, 2) == 1) | (update.message.from_user.username is None) else "@" + update.message.from_user.username)
+                    output_message += lines[rnd_val]
+                case 2:
+                    output_message = output_message.removesuffix("\n")
         else:
             if "#" in lines[rnd_val]:
                 lines[rnd_val] = lines[rnd_val].replace("#", update.message.from_user.first_name if (random.randint(1, 2) == 1) | (update.message.from_user.username is None) else "@" + update.message.from_user.username)
@@ -279,6 +373,7 @@ def main():
     dp.add_handler(CommandHandler('kak', message_how))
     dp.add_handler(CommandHandler('sved', message_info))
     dp.add_handler(CommandHandler('vzvod', change_react_frequency))
+    dp.add_handler(CommandHandler('nazid', change_private_exhortation_mode))
     dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) & (~Filters.chat_type.channel) | Filters.chat_type.private),
                                   process_text, pass_user_data=True))
 
