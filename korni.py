@@ -90,7 +90,6 @@ def get_chat_exhortation(cht_id):
     if res is not None:
         return res[0]
     else:
-        print("Can't extract exhortation for chat " + str(cht_id))
         return res
 
 
