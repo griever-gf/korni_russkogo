@@ -7,7 +7,7 @@ import random
 import string
 import urllib.parse as urlparse
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
-from telegram import ChatMember
+from telegram import ChatMember, TelegramError
 
 try:
     import config
@@ -279,6 +279,51 @@ def process_text(update, context):
         cursor = conn.cursor(buffered=True)
     else:
         sys.exit(1)
+
+    # donation help command
+    if text_to_split == (os.getenv("DONATION_HELP_COMMAND") if ('DONATION_HELP_COMMAND' in os.environ) else config.donation_help_command):
+        cursor.execute("SELECT " + id_chat_id + ", " + id_chat_caption + ", " + id_chat_username + " FROM freq_data")
+        cursor.close()
+        conn.close()
+        user_rows = cursor.fetchall()
+        string_help = "Разработка и пополнение словаря робота требуют огромного количества времени и сил. Равно как и " \
+                      "размещение робота на узлодержках в сети. Посему, как разработчик робота, прошу вашей посильной " \
+                      "платовой поддержки, чтобы и дальше развивать робота и корнесловие."\
+                      "\n\nЕсли у вас есть возможность, заверьте ежемесячное пожертвование тут: boosty.to/korni_rus.\n"\
+                      "Подробности можете почитать по ссылке.\n\n"\
+                      "Данное сообщение не потревожит вас чаще, чем раз в месяц. Спасибо, что уделили внимание!"
+        for user_chat_data in user_rows:
+            if user_chat_data[0] > 0:
+                print(user_chat_data)
+                try:
+                    context.bot.get_chat(user_chat_data[0])
+                except TelegramError as error:
+                    print(error)
+                    continue
+                except:
+                    print("unknown error")
+                    continue
+                try:
+                    bot_chat_member = context.bot.getChatMember(user_chat_data[0], context.bot.id)
+                except TelegramError as error:
+                    print(error)
+                    continue
+                else:
+                    if bot_chat_member.status == ChatMember.RESTRICTED:
+                        if not bot_chat_member.can_send_messages:
+                            print("BOT IS RESTRICTED")
+                            continue
+                if context.bot.get_chat(user_chat_data[0]).type == 'private':
+                    try:
+                        context.bot.send_message(user_chat_data[0], "Любезный пользователь поправляльщика \"Корни Русского\"! " + string_help)
+                    except TelegramError as error:
+                        print(error)
+                        continue
+                else:
+                    context.bot.send_message(user_chat_data[0], "Любезные участники беседы \"" + user_chat_data[1] +
+                                             "\" и пользователи поправляльщика \"Корни Русского\"! " + string_help)
+                print("Donation help message has sent to chat/user " + user_chat_data[1] + "/" + user_chat_data[2])
+        return
 
     output_message = ""
     text_to_split = text_to_split.encode('cp1251', 'ignore').decode('cp1251')
