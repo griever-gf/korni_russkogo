@@ -286,7 +286,7 @@ def process_text(update, context):
         cursor.close()
         conn.close()
         user_rows = cursor.fetchall()
-        string_help = "Разработка и пополнение словаря робота требуют огромного количества времени и сил. Равно как и " \
+        string_help = "Разработка и пополнение словаря робота требуют огромного количества времени и труда. Равно как и " \
                       "размещение робота на узлодержках в сети. Посему, как разработчик робота, прошу вашей посильной " \
                       "платовой поддержки, чтобы и дальше развивать робота и корнесловие."\
                       "\n\nЕсли у вас есть возможность, заверьте ежемесячное пожертвование тут: boosty.to/korni_rus.\n"\
@@ -315,13 +315,13 @@ def process_text(update, context):
                             continue
                 if context.bot.get_chat(user_chat_data[0]).type == 'private':
                     try:
-                        context.bot.send_message(user_chat_data[0], "Любезный пользователь поправляльщика \"Корни Русского\"! " + string_help)
+                        context.bot.send_message(user_chat_data[0], "Любезный пользователь робота-поправляльщика \"Корни Русского\"! " + string_help)
                     except TelegramError as error:
                         print(error)
                         continue
                 else:
                     context.bot.send_message(user_chat_data[0], "Любезные участники беседы \"" + user_chat_data[1] +
-                                             "\" и пользователи поправляльщика \"Корни Русского\"! " + string_help)
+                                             "\" и пользователи робота-поправляльщика \"Корни Русского\"! " + string_help)
                 print("Donation help message has sent to chat/user " + user_chat_data[1] + "/" + user_chat_data[2])
         return
 
