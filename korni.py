@@ -187,9 +187,9 @@ def set_chat_frequency(fq, update):
 
     cursor.execute(
         "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
-        ") VALUES(" + str(chat_id) + ", '" + title + "', '" + username + "', " + str(fq) + ", 1) " +
+        ") VALUES(" + str(chat_id) + ", %s, %s, " + str(fq) + ", 1) " +
         "ON DUPLICATE KEY UPDATE " +
-        id_chat_caption + "='" + title + "', " + id_chat_username + "='" + username + "', " + id_freq + "=" + str(fq) + ", " + id_exhortation + "=NULL")
+        id_chat_caption + "=%s, " + id_chat_username + "=%s, " + id_freq + "=" + str(fq) + ", " + id_exhortation + "=NULL", (title, username, title, username,))
 
     conn.commit()
     cursor.close()
@@ -210,9 +210,9 @@ def set_private_chat_exhortation(val, update):
 
         cursor.execute(
             "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
-            ") VALUES(" + str(chat_id) + ", '" + title + "', '" + username + "', 1, " + str(val) + ") " +
+            ") VALUES(" + str(chat_id) + ", %s, %s, 1, " + str(val) + ") " +
             "ON DUPLICATE KEY UPDATE " +
-            id_chat_caption + "='" + title + "', " + id_chat_username + "='" + username + "', " + id_freq + "=NULL, " + id_exhortation + "=" + str(val))
+            id_chat_caption + "=%s, " + id_chat_username + "=%s, " + id_freq + "=NULL, " + id_exhortation + "=" + str(val), (title, username, title, username,))
 
         conn.commit()
         cursor.close()
