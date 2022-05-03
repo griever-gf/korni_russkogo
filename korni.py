@@ -6,6 +6,7 @@ import sys
 import random
 import string
 import urllib.parse as urlparse
+from _mysql_connector import MySQLInterfaceError
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 from telegram import ChatMember, TelegramError
 
@@ -33,15 +34,15 @@ id_unrecognized_forms = "НЕРАСПОЗНАВАЕМЫЕ ИСКАЖЕНИЯ"
 def message_how(update, context):
     # Send a message when the command /kak is issued.
     update.message.reply_text('Способы использования:\nНаилучший способ - добавить (ро)бота к себе в болталки (беседы),'
-                            ' тогда он будет поправлять всех участников. Для "супергрупп" необходимы права заведующего.'
-                            '\n\nУпрощённый способ - просто присылать любые письмена боту в личку, он тоже будет'
-                            ' их поправлять. Но придётся каждый раз вручную это делать.')
+                              ' тогда он будет поправлять всех участников. Для "супергрупп" необходимы права заведующего.'
+                              '\n\nУпрощённый способ - просто присылать любые письмена боту в личку, он тоже будет'
+                              ' их поправлять. Но придётся каждый раз вручную это делать.')
 
 
 def message_info(update, context):
     # Send a message when the command /sved is issued.
     update.message.reply_text('Дополнительные сведения можно изведать по ссылке:\n'
-                            'https://telegra.ph/Robot-popravlyalshchik-dlya-Telegrama-Korni-russkogo-04-10')
+                              'https://telegra.ph/Robot-popravlyalshchik-dlya-Telegrama-Korni-russkogo-04-10')
 
 
 def connect_to_db():
@@ -66,8 +67,13 @@ def get_chat_frequency(cht_id):
         cursor = conn.cursor(buffered=True)
     else:
         sys.exit(1)
-    cursor.execute("SELECT freq FROM freq_data WHERE chat_id='" + str(cht_id) + "'")
-    res = cursor.fetchone()
+    try:
+        cursor.execute("SELECT freq FROM freq_data WHERE chat_id='" + str(cht_id) + "'")
+        res = cursor.fetchone()
+    except MySQLInterfaceError as error:
+        print(error)
+    except:
+        print("unknown error")
     cursor.close()
     conn.close()
     if res is not None:
@@ -107,7 +113,7 @@ def change_react_frequency(update, context):  # Process when the command /vzvod 
         return
     else:
         if context.bot.getChatMember(update.effective_chat.id, update.effective_user.id).status not in \
-                                    [ChatMember.ADMINISTRATOR, ChatMember.CREATOR]:
+                [ChatMember.ADMINISTRATOR, ChatMember.CREATOR]:
             update.message.reply_text("Настройка ретивости робота доступна лишь пользователям с правами заведующего!")
             return
     if len(context.args) > 0:
@@ -124,14 +130,14 @@ def change_react_frequency(update, context):  # Process when the command /vzvod 
         return
     set_chat_frequency(param, update)
     update.message.reply_text("Ретивость робота в данной болталке установлена на " +
-                              f'{100/param:4.2f}'.replace('.', ',') + "%")
+                              f'{100 / param:4.2f}'.replace('.', ',') + "%")
 
 
 def change_private_exhortation_mode(update, context):  # Process when the command /nazid is issued.
     def send_message_when_wrong_argument():
         update.message.reply_text("Используйте следующие значения в строке после приказа "
                                   "/nazid и пробела для настройки вида назиданий:\n"
-                                  "\"/nazid korni\" - всегда назидание вида \"берегите корни\" (по умолчанию),\n" 
+                                  "\"/nazid korni\" - всегда назидание вида \"берегите корни\" (по умолчанию),\n"
                                   "\"/nazid vse\" - все виды назиданий (так же, как в болталках),\n"
                                   "\"/nazid net\" - назидания не добавляются.")
     if update.message is None:
@@ -185,11 +191,15 @@ def set_chat_frequency(fq, update):
         else:
             username = "NONE"
 
+    title = title.encode('cp1251', 'ignore').decode('cp1251')
+    username = username.encode('cp1251', 'ignore').decode('cp1251')
+
     cursor.execute(
         "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
         ") VALUES(" + str(chat_id) + ", %s, %s, " + str(fq) + ", 1) " +
         "ON DUPLICATE KEY UPDATE " +
-        id_chat_caption + "=%s, " + id_chat_username + "=%s, " + id_freq + "=" + str(fq) + ", " + id_exhortation + "=NULL", (title, username, title, username,))
+        id_chat_caption + "=%s, " + id_chat_username + "=%s, " + id_freq + "=" + str(
+            fq) + ", " + id_exhortation + "=NULL", (title, username, title, username,))
 
     conn.commit()
     cursor.close()
@@ -197,26 +207,28 @@ def set_chat_frequency(fq, update):
 
 
 def set_private_chat_exhortation(val, update):
-        conn = connect_to_db()
-        if conn is not None:
-            cursor = conn.cursor(buffered=True)
-        else:
-            sys.exit(1)
+    conn = connect_to_db()
+    if conn is not None:
+        cursor = conn.cursor(buffered=True)
+    else:
+        sys.exit(1)
 
-        chat_id = update.effective_chat.id
-        title = "PRIVATE"
-        user_username = update.effective_user.username
-        username = "@" + user_username if (user_username is not None) else update.effective_user.first_name
+    chat_id = update.effective_chat.id
+    title = "PRIVATE"
+    user_username = update.effective_user.username
+    username = "@" + user_username if (user_username is not None) else update.effective_user.first_name
+    username = username.encode('cp1251', 'ignore').decode('cp1251')
 
-        cursor.execute(
-            "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
-            ") VALUES(" + str(chat_id) + ", %s, %s, 1, " + str(val) + ") " +
-            "ON DUPLICATE KEY UPDATE " +
-            id_chat_caption + "=%s, " + id_chat_username + "=%s, " + id_freq + "=NULL, " + id_exhortation + "=" + str(val), (title, username, title, username,))
+    cursor.execute(
+        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
+        ") VALUES(" + str(chat_id) + ", %s, %s, 1, " + str(val) + ") " +
+        "ON DUPLICATE KEY UPDATE " +
+        id_chat_caption + "=%s, " + id_chat_username + "=%s, " + id_freq + "=NULL, " + id_exhortation + "=" + str(val),
+        (title, username, title, username,))
 
-        conn.commit()
-        cursor.close()
-        conn.close()
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 
 def correction_string(incoming_word, correction, exclusion):
@@ -281,16 +293,17 @@ def process_text(update, context):
         sys.exit(1)
 
     # donation help command
-    if text_to_split == (os.getenv("DONATION_HELP_COMMAND") if ('DONATION_HELP_COMMAND' in os.environ) else config.donation_help_command):
+    if text_to_split == (
+    os.getenv("DONATION_HELP_COMMAND") if ('DONATION_HELP_COMMAND' in os.environ) else config.donation_help_command):
         cursor.execute("SELECT " + id_chat_id + ", " + id_chat_caption + ", " + id_chat_username + " FROM freq_data")
         cursor.close()
         conn.close()
         user_rows = cursor.fetchall()
         string_help = "Разработка и пополнение словаря робота требуют огромного количества времени и труда. Равно как и " \
                       "размещение робота на узлодержках в сети. Посему, как разработчик робота, прошу вашей посильной " \
-                      "платовой поддержки, чтобы и дальше развивать робота и корнесловие."\
-                      "\n\nЕсли у вас есть возможность, заверьте ежемесячное пожертвование тут: boosty.to/korni_rus.\n"\
-                      "Подробности можете почитать по ссылке.\n\n"\
+                      "платовой поддержки, чтобы и дальше развивать робота и корнесловие." \
+                      "\n\nЕсли у вас есть возможность, заверьте ежемесячное пожертвование тут: boosty.to/korni_rus.\n" \
+                      "Подробности можете почитать по ссылке.\n\n" \
                       "Данное сообщение не потревожит вас чаще, чем раз в месяц. Спасибо, что уделили внимание!"
         for user_chat_data in user_rows:
             if user_chat_data[0] > 0:
@@ -315,7 +328,8 @@ def process_text(update, context):
                             continue
                 if context.bot.get_chat(user_chat_data[0]).type == 'private':
                     try:
-                        context.bot.send_message(user_chat_data[0], "Любезный пользователь робота-поправляльщика \"Корни Русского\"! " + string_help)
+                        context.bot.send_message(user_chat_data[0],
+                                                 "Любезный пользователь робота-поправляльщика \"Корни Русского\"! " + string_help)
                     except TelegramError as error:
                         print(error)
                         continue
@@ -333,7 +347,8 @@ def process_text(update, context):
     input_words_list = re.sub("[^\w-]", " ", text_to_split).split()
 
     for checked_word in input_words_list:
-        checked_word_lower = checked_word.lower().removesuffix("-то").removesuffix("-ка").removesuffix("-таки").removeprefix("таки-")
+        checked_word_lower = checked_word.lower().removesuffix("-то").removesuffix("-ка").removesuffix(
+            "-таки").removeprefix("таки-")
         if checked_word_lower == "":
             continue
         cursor.execute("SELECT " + id_native + ", `" + id_inexact + "`, " + id_non_native + " FROM rodno_data WHERE " +
@@ -356,7 +371,8 @@ def process_text(update, context):
                                    "' OR LOCATE(' " + splitted_part + ",', `" + id_unrecognized_forms + "`)")
                     fix_recommendation = cursor.fetchone()
                     if fix_recommendation is not None:
-                        corr_str = correction_string(fix_recommendation[2], fix_recommendation[0], fix_recommendation[1])
+                        corr_str = correction_string(fix_recommendation[2], fix_recommendation[0],
+                                                     fix_recommendation[1])
                         if not (corr_str in output_message) and not (corr_str in string_to_add):
                             string_to_add += corr_str
                     else:
@@ -365,7 +381,7 @@ def process_text(update, context):
                             string_to_add += corr_str
 
         if string_to_add != "":
-            if not (string_to_add in output_message):  #optimization (maybe)
+            if not (string_to_add in output_message):  # optimization (maybe)
                 output_message += string_to_add
 
     cursor.close()
@@ -375,11 +391,14 @@ def process_text(update, context):
         output_message += "\n"
         lines = open("data/answers.txt", "r", encoding="utf-8").readlines()
         lines_ex = open("data/answers_extra.txt", "r", encoding="utf-8").readlines()
-        rnd_val = random.randint(0, len(lines)-1)
-        rnd_extra = random.randint(0, len(lines_ex)-1)
+        rnd_val = random.randint(0, len(lines) - 1)
+        rnd_extra = random.randint(0, len(lines_ex) - 1)
         if (update.message.from_user.username == 'Tatsuya_S') and (update.message.chat.type != 'private'):
             if "#" in lines_ex[rnd_extra]:
-                lines_ex[rnd_extra] = lines_ex[rnd_extra].replace("#", update.message.from_user.first_name if random.randint(1, 2) == 1 else "@" + update.message.from_user.username)
+                lines_ex[rnd_extra] = lines_ex[rnd_extra].replace("#",
+                                                                  update.message.from_user.first_name if random.randint(
+                                                                      1,
+                                                                      2) == 1 else "@" + update.message.from_user.username)
             output_message += lines_ex[rnd_extra]
         elif update.message.chat.type == 'private':
             exhortation = get_chat_exhortation(chat_id)
@@ -395,7 +414,8 @@ def process_text(update, context):
                         for i in range(pos_sharp - 1, -1, -1):
                             if lines[rnd_val][i] in string.punctuation or lines[rnd_val][i] == ' ':
                                 if lines[rnd_val][i] in [',', ':', ';']:
-                                    lines[rnd_val] = lines[rnd_val][0:i] + lines[rnd_val][pos_sharp + 1:len(lines[rnd_val])]
+                                    lines[rnd_val] = lines[rnd_val][0:i] + lines[rnd_val][
+                                                                           pos_sharp + 1:len(lines[rnd_val])]
                                     break
                             else:
                                 break
@@ -404,7 +424,9 @@ def process_text(update, context):
                     output_message = output_message.removesuffix("\n")
         else:
             if "#" in lines[rnd_val]:
-                lines[rnd_val] = lines[rnd_val].replace("#", update.message.from_user.first_name if (random.randint(1, 2) == 1) | (update.message.from_user.username is None) else "@" + update.message.from_user.username)
+                lines[rnd_val] = lines[rnd_val].replace("#", update.message.from_user.first_name if (random.randint(1,
+                                                                                                                    2) == 1) | (
+                                                                                                                update.message.from_user.username is None) else "@" + update.message.from_user.username)
             output_message += lines[rnd_val]
         if len(output_message) > 4096:
             update.message.reply_text(output_message[0:4096])
@@ -426,7 +448,8 @@ def main():
     dp.add_handler(CommandHandler('sved', message_info))
     dp.add_handler(CommandHandler('vzvod', change_react_frequency))
     dp.add_handler(CommandHandler('nazid', change_private_exhortation_mode))
-    dp.add_handler(MessageHandler((Filters.text | Filters.caption) & ((~Filters.forwarded) & (~Filters.chat_type.channel) | Filters.chat_type.private),
+    dp.add_handler(MessageHandler((Filters.text | Filters.caption) & (
+                (~Filters.forwarded) & (~Filters.chat_type.channel) | Filters.chat_type.private),
                                   process_text, pass_user_data=True))
 
     if 'TG_API_KEY' in os.environ:  # if prod
