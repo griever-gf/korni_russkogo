@@ -68,7 +68,7 @@ def get_chat_frequency(cht_id):
     else:
         sys.exit(1)
     try:
-        cursor.execute("SELECT freq FROM freq_data WHERE chat_id='" + str(cht_id) + "'")
+        cursor.execute(f"SELECT {id_freq}, {id_chat_username}, {id_chat_id}, {id_chat_caption} FROM freq_data WHERE chat_id='" + str(cht_id) + "'")
         res = cursor.fetchone()
     except MySQLInterfaceError as error:
         print(error)
@@ -77,6 +77,7 @@ def get_chat_frequency(cht_id):
     cursor.close()
     conn.close()
     if res is not None:
+        #print("Extracted for chat: " + str(res[1]) + ", chat id: " + str(res[2]) + ", chat caption: " + str(res[3]))
         return res[0]
     else:
         print("Can't extract frequency for chat " + str(cht_id))
@@ -89,7 +90,7 @@ def get_chat_exhortation(cht_id):
         cursor = conn.cursor(buffered=True)
     else:
         sys.exit(1)
-    cursor.execute("SELECT exhortation FROM freq_data WHERE chat_id='" + str(cht_id) + "'")
+    cursor.execute(f"SELECT {id_exhortation} FROM freq_data WHERE chat_id='" + str(cht_id) + "'")
     res = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -277,7 +278,11 @@ def process_text(update, context):
 
     # checks before processing
     if update.message.chat.type != "private":
-        bot_chat_member = context.bot.getChatMember(update.effective_chat.id, context.bot.id)
+        try:
+            bot_chat_member = context.bot.getChatMember(update.effective_chat.id, context.bot.id)
+        except TelegramError as err:
+            print(err)
+            return
         if bot_chat_member.status == ChatMember.RESTRICTED:
             if not bot_chat_member.can_send_messages:
                 return
