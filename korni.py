@@ -32,17 +32,23 @@ id_unrecognized_forms = "НЕРАСПОЗНАВАЕМЫЕ ИСКАЖЕНИЯ"
 
 
 def message_how(update, context):
+    if update.message.chat.type != "private":
+        if not check_for_message_permission(update, context):
+            return
     # Send a message when the command /kak is issued.
-    update.message.reply_text('Способы использования:\nНаилучший способ - добавить (ро)бота к себе в болталки (беседы),'
-                              ' тогда он будет поправлять всех участников. Для "супергрупп" необходимы права заведующего.'
-                              '\n\nУпрощённый способ - просто присылать любые письмена боту в личку, он тоже будет'
-                              ' их поправлять. Но придётся каждый раз вручную это делать.')
+    set_reply_text(update, 'Способы использования:\nНаилучший способ - добавить (ро)бота к себе в болталки (беседы),'
+                           ' тогда он будет поправлять всех участников. Для "супергрупп" необходимы права заведующего.'
+                           '\n\nУпрощённый способ - просто присылать любые письмена боту в личку, он тоже будет'
+                           ' их поправлять. Но придётся каждый раз вручную это делать.')
 
 
 def message_info(update, context):
+    if update.message.chat.type != "private":
+        if not check_for_message_permission(update, context):
+            return
     # Send a message when the command /sved is issued.
-    update.message.reply_text('Дополнительные сведения можно изведать по ссылке:\n'
-                              'https://telegra.ph/Robot-popravlyalshchik-dlya-Telegrama-Korni-russkogo-04-10')
+    set_reply_text(update, 'Дополнительные сведения можно изведать по ссылке:\n'
+                           'https://telegra.ph/Robot-popravlyalshchik-dlya-Telegrama-Korni-russkogo-04-10')
 
 
 def connect_to_db():
@@ -77,7 +83,7 @@ def get_chat_frequency(cht_id):
     cursor.close()
     conn.close()
     if res is not None:
-        #print("Extracted for chat: " + str(res[1]) + ", chat id: " + str(res[2]) + ", chat caption: " + str(res[3]))
+        print("Extracted freq for chat: " + str(res[1]) + ", chat id: " + str(res[2]) + ", chat caption: " + str(res[3]))
         return res[0]
     else:
         print("Can't extract frequency for chat " + str(cht_id))
@@ -102,20 +108,19 @@ def get_chat_exhortation(cht_id):
 
 def change_react_frequency(update, context):  # Process when the command /vzvod is issued.
     def send_message_when_wrong_argument():
-        update.message.reply_text("Используйте целое числовое значение в промежутке от 1 до 50 в строке после приказа "
-                                  "/vzvod и пробела для настройки ретивости робота в данной болталке.\nНапример: "
-                                  "\"/vzvod 1\" - взводиться всегда, \"/vzvod 2\" - взводиться на каждое второе "
-                                  "сообщение, \"/vzvod 10\" - взводиться на каждое десятое и т.п.")
-    if update.message is None:
-        return
+        set_reply_text(update, "Используйте целое числовое значение в промежутке от 1 до 50 в строке после приказа "
+                               "/vzvod и пробела для настройки ретивости робота в данной болталке.\nНапример: "
+                               "\"/vzvod 1\" - взводиться всегда, \"/vzvod 2\" - взводиться на каждое второе "
+                               "сообщение, \"/vzvod 10\" - взводиться на каждое десятое и т.п.")
     if update.message.chat.type == "private":
-        update.message.reply_text("Настройка ретивости робота доступна только при использовании в болталках,"
-                                  " а не в личке!")
+        set_reply_text(update, "Настройка ретивости робота доступна только при использовании в болталках, а не в личке!")
         return
     else:
+        if not check_for_message_permission(update, context):
+            return
         if context.bot.getChatMember(update.effective_chat.id, update.effective_user.id).status not in \
                 [ChatMember.ADMINISTRATOR, ChatMember.CREATOR]:
-            update.message.reply_text("Настройка ретивости робота доступна лишь пользователям с правами заведующего!")
+            set_reply_text(update, "Настройка ретивости робота доступна лишь пользователям с правами заведующего!")
             return
     if len(context.args) > 0:
         try:
@@ -130,21 +135,23 @@ def change_react_frequency(update, context):  # Process when the command /vzvod 
         send_message_when_wrong_argument()
         return
     set_chat_frequency(param, update)
-    update.message.reply_text("Ретивость робота в данной болталке установлена на " +
-                              f'{100 / param:4.2f}'.replace('.', ',') + "%")
+    set_reply_text(update, "Ретивость робота в данной болталке установлена на " +
+                            f'{100 / param:4.2f}'.replace('.', ',') + "%")
 
 
 def change_private_exhortation_mode(update, context):  # Process when the command /nazid is issued.
     def send_message_when_wrong_argument():
-        update.message.reply_text("Используйте следующие значения в строке после приказа "
-                                  "/nazid и пробела для настройки вида назиданий:\n"
-                                  "\"/nazid korni\" - всегда назидание вида \"берегите корни\" (по умолчанию),\n"
-                                  "\"/nazid vse\" - все виды назиданий (так же, как в болталках),\n"
-                                  "\"/nazid net\" - назидания не добавляются.")
+        set_reply_text(update, "Используйте следующие значения в строке после приказа "
+                               "/nazid и пробела для настройки вида назиданий:\n"
+                               "\"/nazid korni\" - всегда назидание вида \"берегите корни\" (по умолчанию),\n"
+                               "\"/nazid vse\" - все виды назиданий (так же, как в болталках),\n"
+                               "\"/nazid net\" - назидания не добавляются.")
     if update.message is None:
         return
     if update.message.chat.type != "private":
-        update.message.reply_text("Настройка вида назиданий доступна только в личке, а не в болталках!")
+        if not check_for_message_permission(update, context):
+            return
+        set_reply_text(update, "Настройка вида назиданий доступна только в личке, а не в болталках!")
         return
     if len(context.args) > 0:
         try:
@@ -169,7 +176,7 @@ def change_private_exhortation_mode(update, context):  # Process when the comman
             send_message_when_wrong_argument()
             return
     set_private_chat_exhortation(value, update)
-    update.message.reply_text("Назидания робота в личной переписке " + str_reply + ".")
+    set_reply_text(update, "Назидания робота в личной переписке " + str_reply + ".")
 
 
 def set_chat_frequency(fq, update):
@@ -257,6 +264,28 @@ def correction_string_from_normal_forms(crsr, chkd_wrd_lwr):
     return string_res
 
 
+def check_for_message_permission(upd, cntx):
+    try:
+        bot_chat_member = cntx.bot.getChatMember(upd.effective_chat.id, cntx.bot.id)
+    except TelegramError as err:
+        print(err)
+        return False
+    if bot_chat_member.status == ChatMember.RESTRICTED:
+        if not bot_chat_member.can_send_messages:
+            return False
+    #print("can send messages!")
+    return True
+
+
+def set_reply_text(upd, txt):
+    try:
+        upd.message.reply_text(txt)
+    except TelegramError as err:
+        print("ERROR DURING REPLY:")
+        print(err)
+        return
+
+
 # Let's analyze all the incoming text
 def process_text(update, context):
     if update.message is None:
@@ -278,14 +307,8 @@ def process_text(update, context):
 
     # checks before processing
     if update.message.chat.type != "private":
-        try:
-            bot_chat_member = context.bot.getChatMember(update.effective_chat.id, context.bot.id)
-        except TelegramError as err:
-            print(err)
+        if not check_for_message_permission(update, context):
             return
-        if bot_chat_member.status == ChatMember.RESTRICTED:
-            if not bot_chat_member.can_send_messages:
-                return
     else:
         if text_to_split == "/start":
             message_how(update, context)
@@ -434,12 +457,12 @@ def process_text(update, context):
                                                                                                                 update.message.from_user.username is None) else "@" + update.message.from_user.username)
             output_message += lines[rnd_val]
         if len(output_message) > 4096:
-            update.message.reply_text(output_message[0:4096])
+            set_reply_text(update, output_message[0:4096])
         else:
-            update.message.reply_text(output_message)
+            set_reply_text(update, output_message)
     elif update.message.chat.type == 'private':
         output_message = "Языковая дружина проверила ваши письмена и не нашла ничего зазорного. Ладный русский слог, иностранщина не обнаружена, отпускаем вас."
-        update.message.reply_text(output_message)
+        set_reply_text(update, output_message)
 
 
 def main():
