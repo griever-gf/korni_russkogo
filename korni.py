@@ -6,6 +6,8 @@ import sys
 import random
 import string
 import urllib.parse as urlparse
+import asyncio
+from datetime import datetime
 from _mysql_connector import MySQLInterfaceError
 from telegram.ext import Updater, MessageHandler, Filters, CommandHandler
 from telegram import ChatMember, TelegramError
@@ -30,6 +32,9 @@ id_inexact = "ПОПРАВКА НА СЛУЧАЙ НЕМУСОРНОГО"
 id_extra_normal_form = "ДОП. РАСПОЗНАВАЕМОЕ ИСХОДНОЕ ИСКАЖЕНИЕ"
 id_unrecognized_forms = "НЕРАСПОЗНАВАЕМЫЕ ИСКАЖЕНИЯ"
 
+def get_sys_var(var_name):
+    res = os.getenv(var_name) if (var_name in os.environ) else getattr(config, var_name.lower())
+    return res
 
 def message_how(update, context):
     if update.message.chat.type != "private":
@@ -285,6 +290,69 @@ def set_reply_text(upd, txt):
         print(err)
         return
 
+async def send_donation_requests(cntx, crsr, cnctn):
+    def print_and_write_to_file(log_file, str):
+        print(str)
+        f.write(str + "\n")
+
+    crsr.execute("SELECT " + id_chat_id + ", " + id_chat_caption + ", " + id_chat_username + " FROM freq_data")
+    crsr.close()
+    cnctn.close()
+    user_rows = crsr.fetchall()
+    string_help = "Разработка и пополнение словаря робота требуют огромного количества времени и труда. Равно как и " \
+                  "размещение робота на узлодержках в сети. Посему, как разработчик робота, прошу вашей посильной " \
+                  "платовой поддержки, чтобы и дальше развивать робота и корнесловие." \
+                  "\n\nЕсли у вас есть возможность, заверьте ежемесячное пожертвование тут: boosty.to/korni_rus.\n" \
+                  "Подробности можете почитать по ссылке.\n\n" \
+                  "Данное сообщение не потревожит вас чаще, чем раз в неделю. Спасибо, что уделили внимание!"
+
+    f = open("donation_log_" + datetime.today().strftime('%Y-%m-%d') +".txt", "w")
+    for user_chat_data in user_rows:
+        print(user_chat_data)
+        try:
+            cntx.bot.get_chat(user_chat_data[0])
+        except TelegramError as error:
+            print_and_write_to_file(user_chat_data[0] + ": Error with chat/user " + user_chat_data[1] +
+                                    "/" + user_chat_data[2] + " " + error.message)
+            continue
+        except:
+            print_and_write_to_file(user_chat_data[0] + ": Error with chat/user " + user_chat_data[1] +
+                                    "/" + user_chat_data[2] + " " + " unknown error")
+            continue
+        try:
+            bot_chat_member = cntx.bot.getChatMember(user_chat_data[0], cntx.bot.id)
+        except TelegramError as error:
+            print_and_write_to_file(user_chat_data[0] + ": Error with chat/user " + user_chat_data[1] +
+                                    "/" + user_chat_data[2] + " " + error.message)
+            continue
+        else:
+            if bot_chat_member.status == ChatMember.RESTRICTED:
+                if not bot_chat_member.can_send_messages:
+                    print_and_write_to_file(user_chat_data[0] + ": Error with chat/user " + user_chat_data[1] +
+                                            "/" + user_chat_data[2] + " - BOT IS RESTRICTED")
+                    continue
+        if cntx.bot.get_chat(user_chat_data[0]).type == 'private':
+            try:
+                await cntx.bot.send_message(user_chat_data[0], "Любезный/ая " + user_chat_data[2] +
+                                         ", пользователь робота-поправляльщика \"Корни Русского\"! " + string_help)
+            except TelegramError as error:
+                print_and_write_to_file(user_chat_data[0] + ": Error with chat/user " + user_chat_data[1] +
+                                        "/" + user_chat_data[2] + " " + error.message)
+                await asyncio.sleep(1)
+                continue
+        else:
+            try:
+                await cntx.bot.send_message(user_chat_data[0], "Любезные участники беседы \"" + user_chat_data[1] +
+                                      "\" и пользователи робота-поправляльщика \"Корни Русского\"! " + string_help)
+            except TelegramError as error:
+                print_and_write_to_file(user_chat_data[0] + ": Error with chat/user " + user_chat_data[1] +
+                                        "/" + user_chat_data[2] + " " + error.message)
+                await asyncio.sleep(1)
+                continue
+        print_and_write_to_file(user_chat_data[0] + "Donation help message has sent to chat/user " +
+                                user_chat_data[1] + "/" + user_chat_data[2])
+    f.close()
+
 
 # Let's analyze all the incoming text
 def process_text(update, context):
@@ -320,51 +388,8 @@ def process_text(update, context):
     else:
         sys.exit(1)
 
-    # donation help command
-    if text_to_split == (
-    os.getenv("DONATION_HELP_COMMAND") if ('DONATION_HELP_COMMAND' in os.environ) else config.donation_help_command):
-        cursor.execute("SELECT " + id_chat_id + ", " + id_chat_caption + ", " + id_chat_username + " FROM freq_data")
-        cursor.close()
-        conn.close()
-        user_rows = cursor.fetchall()
-        string_help = "Разработка и пополнение словаря робота требуют огромного количества времени и труда. Равно как и " \
-                      "размещение робота на узлодержках в сети. Посему, как разработчик робота, прошу вашей посильной " \
-                      "платовой поддержки, чтобы и дальше развивать робота и корнесловие." \
-                      "\n\nЕсли у вас есть возможность, заверьте ежемесячное пожертвование тут: boosty.to/korni_rus.\n" \
-                      "Подробности можете почитать по ссылке.\n\n" \
-                      "Данное сообщение не потревожит вас чаще, чем раз в месяц. Спасибо, что уделили внимание!"
-        for user_chat_data in user_rows:
-            if user_chat_data[0] > 0:
-                print(user_chat_data)
-                try:
-                    context.bot.get_chat(user_chat_data[0])
-                except TelegramError as error:
-                    print(error)
-                    continue
-                except:
-                    print("unknown error")
-                    continue
-                try:
-                    bot_chat_member = context.bot.getChatMember(user_chat_data[0], context.bot.id)
-                except TelegramError as error:
-                    print(error)
-                    continue
-                else:
-                    if bot_chat_member.status == ChatMember.RESTRICTED:
-                        if not bot_chat_member.can_send_messages:
-                            print("BOT IS RESTRICTED")
-                            continue
-                if context.bot.get_chat(user_chat_data[0]).type == 'private':
-                    try:
-                        context.bot.send_message(user_chat_data[0],
-                                                 "Любезный пользователь робота-поправляльщика \"Корни Русского\"! " + string_help)
-                    except TelegramError as error:
-                        print(error)
-                        continue
-                else:
-                    context.bot.send_message(user_chat_data[0], "Любезные участники беседы \"" + user_chat_data[1] +
-                                             "\" и пользователи робота-поправляльщика \"Корни Русского\"! " + string_help)
-                print("Donation help message has sent to chat/user " + user_chat_data[1] + "/" + user_chat_data[2])
+    if text_to_split == get_sys_var("DONATION_HELP_COMMAND"):
+        asyncio.run(send_donation_requests(context, cursor, conn))
         return
 
     output_message = ""
@@ -467,11 +492,8 @@ def process_text(update, context):
 
 def main():
     """Start the bot."""
-    updater = Updater(os.getenv("TG_API_KEY") if ('TG_API_KEY' in os.environ) else config.api_key)
-
-    # Get the dispatcher to register handlers
+    updater = Updater(get_sys_var("TG_API_KEY"))
     dp = updater.dispatcher
-
     dp.add_handler(CommandHandler('kak', message_how))
     dp.add_handler(CommandHandler('sved', message_info))
     dp.add_handler(CommandHandler('vzvod', change_react_frequency))
