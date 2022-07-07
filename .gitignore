@@ -1,6 +1,7 @@
 #My
 config.py
 .env
+donation_log*
 
 # Editors
 .vscode/

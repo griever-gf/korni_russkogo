@@ -25,6 +25,7 @@ id_chat_caption = "chat_caption"
 id_chat_username = "username"
 id_freq = "freq"
 id_exhortation = "exhortation"
+id_donation_exclude = "donation_ask_exclude"
 id_non_native = "МУСОРНОЕ"
 id_native = "РОДНОЕ"
 id_exclusions = "ИСКЛЮЧЁННЫЕ ИСКАЖЕНИЯ"
@@ -41,10 +42,8 @@ def message_how(update, context):
         if not check_for_message_permission(update, context):
             return
     # Send a message when the command /kak is issued.
-    set_reply_text(update, 'Способы использования:\nНаилучший способ - добавить (ро)бота к себе в болталки (беседы),'
-                           ' тогда он будет поправлять всех участников. Для "супергрупп" необходимы права заведующего.'
-                           '\n\nУпрощённый способ - просто присылать любые письмена боту в личку, он тоже будет'
-                           ' их поправлять. Но придётся каждый раз вручную это делать.')
+    string_kak = open("data/command_kak_answer.txt", "r", encoding="utf-8").read()
+    set_reply_text(update, string_kak)
 
 
 def message_info(update, context):
@@ -52,8 +51,8 @@ def message_info(update, context):
         if not check_for_message_permission(update, context):
             return
     # Send a message when the command /sved is issued.
-    set_reply_text(update, 'Дополнительные сведения можно изведать по ссылке:\n'
-                           'https://telegra.ph/Robot-popravlyalshchik-dlya-Telegrama-Korni-russkogo-04-10')
+    string_sved = open("data/command_sved_answer.txt", "r", encoding="utf-8").read()
+    set_reply_text(update, string_sved)
 
 
 def connect_to_db():
@@ -208,8 +207,8 @@ def set_chat_frequency(fq, update):
     username = username.encode('cp1251', 'ignore').decode('cp1251')
 
     cursor.execute(
-        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
-        ") VALUES(" + str(chat_id) + ", %s, %s, " + str(fq) + ", 1) " +
+        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation + "," + id_donation_exclude +
+        ") VALUES(" + str(chat_id) + ", %s, %s, " + str(fq) + ", 1, 0) " +
         "ON DUPLICATE KEY UPDATE " +
         id_chat_caption + "=%s, " + id_chat_username + "=%s, " + id_freq + "=" + str(
             fq) + ", " + id_exhortation + "=NULL", (title, username, title, username,))
@@ -233,8 +232,8 @@ def set_private_chat_exhortation(val, update):
     username = username.encode('cp1251', 'ignore').decode('cp1251')
 
     cursor.execute(
-        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation +
-        ") VALUES(" + str(chat_id) + ", %s, %s, 1, " + str(val) + ") " +
+        "INSERT INTO freq_data(" + id_chat_id + "," + id_chat_caption + "," + id_chat_username + "," + id_freq + "," + id_exhortation + "," + id_donation_exclude +
+        ") VALUES(" + str(chat_id) + ", %s, %s, 1, " + str(val) + ", 0) " +
         "ON DUPLICATE KEY UPDATE " +
         id_chat_caption + "=%s, " + id_chat_username + "=%s, " + id_freq + "=NULL, " + id_exhortation + "=" + str(val),
         (title, username, title, username,))
@@ -293,23 +292,20 @@ def set_reply_text(upd, txt):
 def send_donation_requests(cntx, crsr, cnctn):
     def print_and_write_to_file(str):
         print(str)
-        f.write(str + "\\n")
+        f.write(str + "\n")
 
-    crsr.execute("SELECT " + id_chat_id + ", " + id_chat_caption + ", " + id_chat_username + " FROM freq_data")
+    crsr.execute("SELECT " + id_chat_id + ", " + id_chat_caption + ", " + id_chat_username + ", " + id_donation_exclude + " FROM freq_data")
     crsr.close()
     cnctn.close()
     user_rows = crsr.fetchall()
-    string_help = "Разработка и пополнение словаря робота требуют огромного количества времени и труда. Равно как и " \
-                  "размещение робота на узлодержках в сети. Посему, как разработчик робота, прошу вашей посильной " \
-                  "платовой поддержки, чтобы и дальше развивать робота и корнесловие." \
-                  "\n\nЕсли у вас есть возможность, заверьте ежемесячное пожертвование тут: boosty.to/korni_rus.\n" \
-                  "Подробности можете почитать по ссылке.\n\n" \
-                  "Данное сообщение не потревожит вас чаще, чем раз в неделю. Спасибо, что уделили внимание!"
-
+    string_help = open("data/donation_ask_message.txt", "r", encoding="utf-8").read()
     f = open("donation_log_" + datetime.today().strftime('%Y-%m-%d') +".txt", "w")
     for user_chat_data in user_rows:
-        if (user_chat_data[0]>-1001635715511):
             print(user_chat_data)
+            if user_chat_data[3] == 1:
+                print_and_write_to_file(str(user_chat_data[0]) + " Chat/user " + user_chat_data[1] + "/" +
+                                        user_chat_data[2] + "is excluded from donation help list")
+                continue
             try:
                 cntx.bot.get_chat(user_chat_data[0])
             except TelegramError as error:
@@ -335,7 +331,7 @@ def send_donation_requests(cntx, crsr, cnctn):
             if cntx.bot.get_chat(user_chat_data[0]).type == 'private':
                 try:
                     cntx.bot.send_message(str(user_chat_data[0]), "Любезный/ая " + user_chat_data[2] +
-                                             ", пользователь робота-поправляльщика \"Корни Русского\"! " + string_help)
+                                             ", пользователь робота-поправляльщика \"Корни Русского\"!\n\n" + string_help)
                 except TelegramError as error:
                     print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                             "/" + user_chat_data[2] + " " + error.message)
@@ -344,7 +340,7 @@ def send_donation_requests(cntx, crsr, cnctn):
             else:
                 try:
                     cntx.bot.send_message(str(user_chat_data[0]), "Любезные участники беседы \"" + user_chat_data[1] +
-                                          "\" и пользователи робота-поправляльщика \"Корни Русского\"! " + string_help)
+                                          "\" и пользователи робота-поправляльщика \"Корни Русского\"!\n\n" + string_help)
                 except TelegramError as error:
                     print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                             "/" + user_chat_data[2] + " " + error.message)
