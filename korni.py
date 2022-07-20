@@ -300,33 +300,40 @@ def send_donation_requests(cntx, crsr, cnctn):
     user_rows = crsr.fetchall()
     string_help = open("data/donation_ask_message.txt", "r", encoding="utf-8").read()
     f = open("donation_log_" + datetime.today().strftime('%Y-%m-%d') +".txt", "w")
+    cntr_msg_snd = 0
+    cntr_msg_err = 0
     for user_chat_data in user_rows:
             print(user_chat_data)
             if user_chat_data[3] == 1:
                 print_and_write_to_file(str(user_chat_data[0]) + " Chat/user " + user_chat_data[1] + "/" +
                                         user_chat_data[2] + "is excluded from donation help list")
+                cntr_msg_err += 1
                 continue
             try:
                 cntx.bot.get_chat(user_chat_data[0])
             except TelegramError as error:
                 print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                         "/" + user_chat_data[2] + " " + error.message)
+                cntr_msg_err += 1
                 continue
             except:
                 print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                         "/" + user_chat_data[2] + " " + " unknown error")
+                cntr_msg_err += 1
                 continue
             try:
                 bot_chat_member = cntx.bot.getChatMember(user_chat_data[0], cntx.bot.id)
             except TelegramError as error:
                 print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                         "/" + user_chat_data[2] + " " + error.message)
+                cntr_msg_err += 1
                 continue
             else:
                 if bot_chat_member.status == ChatMember.RESTRICTED:
                     if not bot_chat_member.can_send_messages:
                         print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                                 "/" + user_chat_data[2] + " - BOT IS RESTRICTED")
+                        cntr_msg_err += 1
                         continue
             if cntx.bot.get_chat(user_chat_data[0]).type == 'private':
                 try:
@@ -335,6 +342,7 @@ def send_donation_requests(cntx, crsr, cnctn):
                 except TelegramError as error:
                     print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                             "/" + user_chat_data[2] + " " + error.message)
+                    cntr_msg_err += 1
                     time.sleep(1)
                     continue
             else:
@@ -344,14 +352,19 @@ def send_donation_requests(cntx, crsr, cnctn):
                 except TelegramError as error:
                     print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                             "/" + user_chat_data[2] + " " + error.message)
+                    cntr_msg_err += 1
                     time.sleep(1)
                     continue
                 except:
                     print_and_write_to_file(str(user_chat_data[0]) + ": Error with chat/user " + user_chat_data[1] +
                                             "/" + user_chat_data[2] + " " + " unknown error")
+                    cntr_msg_err += 1
                     continue
             print_and_write_to_file(str(user_chat_data[0]) + " Donation help message has sent to chat/user " +
                                     user_chat_data[1] + "/" + user_chat_data[2])
+            cntr_msg_snd += 1
+    print_and_write_to_file("Donation messages send: " + str(cntr_msg_snd) +
+                            "\nDonation messages errors: " + str(cntr_msg_err))
     f.close()
 
 
