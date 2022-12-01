@@ -518,7 +518,7 @@ def main():
 
     if 'TG_API_KEY' in os.environ:  # if prod
         updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=os.getenv("TG_API_KEY"),
-                              webhook_url='https://korni-russkogo.herokuapp.com/' + os.getenv("TG_API_KEY"))
+                              webhook_url='https://korni-russkogo.onrender.com/' + os.getenv("TG_API_KEY"))
     else:  # if dev
         updater.start_polling()
 
