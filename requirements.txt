@@ -5,3 +5,4 @@ pymorphy2-dicts==2.4.393442.3710985
 pymorphy2-dicts-ru==2.4.417127.4579844
 python-telegram-bot==13.11
 urllib3==1.26.9
+gunicorn==20.1.0
